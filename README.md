@@ -11,7 +11,7 @@ Hack-a-TON
 - Pagamentos diretos em TON ou tokens suportados (on-chain)
 - Notificações de despesas, cobranças e pagamentos
 - Histórico de transações e despesas
-- Exportação de relatórios (PDF, CSV)
-- Integração com QR Code para pagamentos
-- Sistema de comentários ou anexos em despesas
+- Exportação de relatórios (PDF, CSV) -> nice to have (P3)
+- Integração com QR Code para pagamentos -> nice to have (P2)
+- Sistema de comentários ou anexos em despesas -> nice to have (P1)
 - Interface web/mobile responsiva
