@@ -1,3 +1,4 @@
+<img src="./spliton-logo.png"> </img>
 # spliton 
 Hack-a-TON 
 <img src="./clientRoadMap.png"> </img>
