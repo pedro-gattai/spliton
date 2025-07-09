@@ -1,4 +1,4 @@
-# spliton 
+# Spliton 
 Hack-a-TON 
 <img src="./clientRoadMap.png"> </img>
 
@@ -16,12 +16,56 @@ Hack-a-TON
 - Sistema de comentários ou anexos em despesas -> nice to have (P1)
 - Interface web/mobile responsiva
 
+## Project Structure
+
+This is a monorepo containing:
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS + Shadcn/ui
+- **Backend**: NestJS + TypeScript
+- **Smart Contracts**: TON blockchain contracts (Tact)
+
 ## Step-by-step guide
 
-- Make sure to have node.js >= 22.0.0
-- Install the Tact Language extension in your IDE (e.g., VSCode).
-- Run the following commands to set up the project:
+### Prerequisites
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- Install the Tact Language extension in your IDE (e.g., VSCode)
+
+### Setup
+
+1. **Install all dependencies:**
+```bash
+npm run install:all
+```
+
+2. **Start development servers:**
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Or start them separately:
+npm run dev:frontend  # Frontend on http://localhost:5173
+npm run dev:backend   # Backend on http://localhost:3000
+```
+
+3. **Build for production:**
+```bash
+npm run build
+```
+
+### Available Scripts
+
+- `npm run dev` - Start both frontend and backend in development mode
+- `npm run dev:frontend` - Start only frontend
+- `npm run dev:backend` - Start only backend
+- `npm run build` - Build both frontend and backend
+- `npm run lint` - Lint both frontend and backend
+- `npm run test` - Run tests for both frontend and backend
+
+### Smart Contracts Setup
+
+For the TON smart contracts:
 
 ```bash
+cd simple-counter
 yarn create ton simple-counter --type tact-counter --contractName SimpleCounter
 ```
