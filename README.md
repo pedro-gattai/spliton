@@ -15,3 +15,13 @@ Hack-a-TON
 - Integração com QR Code para pagamentos -> nice to have (P2)
 - Sistema de comentários ou anexos em despesas -> nice to have (P1)
 - Interface web/mobile responsiva
+
+## Step-by-step guide
+
+- Make sure to have node.js >= 22.0.0
+- Install the Tact Language extension in your IDE (e.g., VSCode).
+- Run the following commands to set up the project:
+
+```bash
+yarn create ton simple-counter --type tact-counter --contractName SimpleCounter
+```
