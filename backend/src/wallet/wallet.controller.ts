@@ -20,7 +20,9 @@ export class WalletController {
    * Busca o saldo de uma carteira pelo endereço
    */
   @Get('balance/:address')
-  async getWalletBalance(@Param('address') address: string): Promise<WalletBalance> {
+  async getWalletBalance(
+    @Param('address') address: string,
+  ): Promise<WalletBalance> {
     try {
       this.logger.log(`Requisição para buscar saldo da carteira: ${address}`);
       return await this.walletService.getWalletBalance(address);
@@ -41,13 +43,15 @@ export class WalletController {
    * Busca o saldo da carteira de um usuário pelo ID
    */
   @Get('user/:userId')
-  async getUserWalletBalance(@Param('userId') userId: string): Promise<WalletBalance> {
+  async getUserWalletBalance(
+    @Param('userId') userId: string,
+  ): Promise<WalletBalance> {
     try {
       this.logger.log(`Requisição para buscar saldo do usuário: ${userId}`);
       return await this.walletService.getUserWalletBalance(userId);
     } catch (error) {
       this.logger.error(`Erro na rota getUserWalletBalance: ${error.message}`);
-      
+
       if (error.message.includes('não encontrado')) {
         throw new HttpException(
           {
@@ -57,7 +61,7 @@ export class WalletController {
           HttpStatus.NOT_FOUND,
         );
       }
-      
+
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
@@ -77,14 +81,20 @@ export class WalletController {
     @Param('telegramId') telegramId: string,
   ): Promise<WalletBalance> {
     try {
-      this.logger.log(`Requisição para buscar saldo do usuário Telegram: ${telegramId}`);
-      
+      this.logger.log(
+        `Requisição para buscar saldo do usuário Telegram: ${telegramId}`,
+      );
+
       // Converter string para BigInt
       const telegramIdBigInt = BigInt(telegramId);
-      return await this.walletService.getUserWalletBalanceByTelegramId(telegramIdBigInt);
+      return await this.walletService.getUserWalletBalanceByTelegramId(
+        telegramIdBigInt,
+      );
     } catch (error) {
-      this.logger.error(`Erro na rota getUserWalletBalanceByTelegramId: ${error.message}`);
-      
+      this.logger.error(
+        `Erro na rota getUserWalletBalanceByTelegramId: ${error.message}`,
+      );
+
       if (error.message.includes('não encontrado')) {
         throw new HttpException(
           {
@@ -94,7 +104,7 @@ export class WalletController {
           HttpStatus.NOT_FOUND,
         );
       }
-      
+
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
@@ -125,8 +135,8 @@ export class WalletController {
         );
       }
 
-      const addresses = addressesParam.split(',').map(addr => addr.trim());
-      
+      const addresses = addressesParam.split(',').map((addr) => addr.trim());
+
       if (addresses.length === 0) {
         throw new HttpException(
           {
@@ -137,15 +147,19 @@ export class WalletController {
         );
       }
 
-      this.logger.log(`Requisição para buscar saldos de ${addresses.length} carteiras`);
+      this.logger.log(
+        `Requisição para buscar saldos de ${addresses.length} carteiras`,
+      );
       return await this.walletService.getMultipleWalletBalances(addresses);
     } catch (error) {
-      this.logger.error(`Erro na rota getMultipleWalletBalances: ${error.message}`);
-      
+      this.logger.error(
+        `Erro na rota getMultipleWalletBalances: ${error.message}`,
+      );
+
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
@@ -161,12 +175,16 @@ export class WalletController {
    * Busca saldos de todas as carteiras de usuários do sistema
    */
   @Get('all')
-  async getAllUsersWalletBalances(): Promise<(WalletBalance & { userId: string; userName: string })[]> {
+  async getAllUsersWalletBalances(): Promise<
+    (WalletBalance & { userId: string; userName: string })[]
+  > {
     try {
       this.logger.log('Requisição para buscar saldos de todos os usuários');
       return await this.walletService.getAllUsersWalletBalances();
     } catch (error) {
-      this.logger.error(`Erro na rota getAllUsersWalletBalances: ${error.message}`);
+      this.logger.error(
+        `Erro na rota getAllUsersWalletBalances: ${error.message}`,
+      );
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -203,14 +221,41 @@ export class WalletController {
    * Valida se um endereço TON é válido
    */
   @Get('validate/:address')
-  async validateAddress(@Param('address') address: string): Promise<{ valid: boolean; address: string }> {
+  async validateAddress(
+    @Param('address') address: string,
+  ): Promise<{ valid: boolean; address: string }> {
     try {
       this.logger.log(`Requisição para validar endereço: ${address}`);
-      
-      // Usar regex para validar formato do endereço TON
-      const tonAddressRegex = /^EQ[a-zA-Z0-9]{48}$/;
-      const isValid = tonAddressRegex.test(address);
-      
+
+      // Validar apenas se começa com EQ e tem 48 caracteres
+      const isValid = address.startsWith('EQ') && address.length === 48;
+
+      if (!isValid) {
+        // Verificar especificamente o que está errado
+        let errorReason = '';
+
+        if (!address.startsWith('EQ')) {
+          errorReason = 'Endereço deve começar com "EQ"';
+                } else if (address.length !== 48) {
+          errorReason = `Endereço deve ter exatamente 48 caracteres (atual: ${address.length})`;
+        }
+
+        throw new HttpException(
+          {
+            status: HttpStatus.BAD_REQUEST,
+            error: 'Endereço TON inválido',
+            reason: errorReason,
+            details: {
+              address: address,
+              expectedFormat: 'EQ + 46 caracteres',
+              totalLength: '48 caracteres',
+              currentLength: address.length,
+            },
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       return {
         valid: isValid,
         address: address,
@@ -226,4 +271,4 @@ export class WalletController {
       );
     }
   }
-} 
+}

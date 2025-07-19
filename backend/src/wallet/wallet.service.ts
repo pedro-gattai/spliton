@@ -50,7 +50,7 @@ export class WalletService {
         },
       );
 
-      const balance = response.data.result.balance;
+      const balance = response.data.result.balance || '0';
       const balanceInTon = this.convertNanoToTon(balance);
 
       const walletBalance: WalletBalance = {
@@ -239,18 +239,27 @@ export class WalletService {
    * Valida se um endereço TON é válido
    */
   private isValidTonAddress(address: string): boolean {
-    // Formato básico de endereço TON: EQ + 48 caracteres hex
-    const tonAddressRegex = /^EQ[a-zA-Z0-9]{48}$/;
-    return tonAddressRegex.test(address);
+    // Formato de endereço TON: EQ + 46 caracteres
+    // Total: 48 caracteres (EQ + 46)
+    return address.startsWith('EQ') && address.length === 48;
   }
 
   /**
    * Converte nano TON para TON
    */
   private convertNanoToTon(nanoAmount: string): number {
-    const nano = BigInt(nanoAmount);
-    const ton = Number(nano) / 1e9; // 1 TON = 10^9 nano TON
-    return Math.round(ton * 1000000) / 1000000; // Arredonda para 6 casas decimais
+    if (!nanoAmount || nanoAmount === 'undefined' || nanoAmount === 'null') {
+      return 0;
+    }
+    
+    try {
+      const nano = BigInt(nanoAmount);
+      const ton = Number(nano) / 1e9; // 1 TON = 10^9 nano TON
+      return Math.round(ton * 1000000) / 1000000; // Arredonda para 6 casas decimais
+    } catch (error) {
+      this.logger.warn(`Erro ao converter nano amount '${nanoAmount}': ${error.message}`);
+      return 0;
+    }
   }
 
   /**
