@@ -1,17 +1,14 @@
 # Dockerfile para Backend Spliton - Deploy Simples
 FROM node:18-alpine
 
-# Instalar dependências necessárias para Prisma
-RUN apk add --no-cache openssl
-
 # Criar diretório da aplicação
 WORKDIR /app
 
-# Copiar package.json e package-lock.json
-COPY backend/package*.json ./
+# Copiar package.json
+COPY backend/package.json ./
 
-# Instalar dependências
-RUN npm ci --omit=dev --no-audit
+# Instalar dependências (usando npm install já que não há package-lock.json)
+RUN npm install --omit=dev --no-audit
 
 # Instalar dependências de build temporariamente
 RUN npm install @nestjs/cli typescript --no-save
@@ -37,4 +34,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Comando para iniciar a aplicação
-CMD ["node", "dist/main.js"] 
+CMD ["node", "dist/src/main.js"] 
