@@ -1,5 +1,8 @@
-# Dockerfile para Backend Spliton - Deploy Simples
+# Dockerfile para Backend Spliton - Railway Deploy
 FROM node:18-alpine
+
+# Instalar dependências necessárias para Prisma com PostgreSQL
+RUN apk add --no-cache openssl
 
 # Criar diretório da aplicação
 WORKDIR /app
@@ -7,11 +10,8 @@ WORKDIR /app
 # Copiar package.json
 COPY backend/package.json ./
 
-# Instalar dependências (usando npm install já que não há package-lock.json)
-RUN npm install --omit=dev --no-audit
-
-# Instalar dependências de build temporariamente
-RUN npm install @nestjs/cli typescript --no-save
+# Instalar todas as dependências (incluindo dev dependencies para build)
+RUN npm install
 
 # Copiar código fonte
 COPY backend/ ./
@@ -21,10 +21,6 @@ RUN npx prisma generate
 
 # Build da aplicação
 RUN npm run build
-
-# Remover dependências de build desnecessárias
-RUN npm uninstall @nestjs/cli typescript
-RUN npm prune --omit=dev
 
 # Tornar o script de inicialização executável
 RUN chmod +x scripts/start.sh
