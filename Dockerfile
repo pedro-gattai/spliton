@@ -26,6 +26,9 @@ RUN npm run build
 RUN npm uninstall @nestjs/cli typescript
 RUN npm prune --omit=dev
 
+# Tornar o script de inicialização executável
+RUN chmod +x scripts/start.sh
+
 # Expor porta
 EXPOSE 3000
 
@@ -34,4 +37,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Comando para iniciar a aplicação
-CMD ["node", "dist/src/main.js"] 
+CMD ["./scripts/start.sh"] 
