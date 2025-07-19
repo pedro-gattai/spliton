@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "build:cf": "rm -rf node_modules package-lock.json && npm install && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:prod": "npm ci --legacy-peer-deps --prefer-offline && vite build",
+    "build:clean": "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps",
+    "build:cf:cloudflare": "npm ci --legacy-peer-deps --prefer-offline && npm install @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu --save-dev && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -64,6 +67,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@rollup/rollup-darwin-arm64": "^4.21.3",
+    "@swc/core-darwin-arm64": "^1.7.26",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
@@ -80,5 +85,10 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
+  },
+  "overrides": {
+    "rollup": "^4.21.3",
+    "@rollup/rollup-linux-x64-gnu": "4.21.3",
+    "@swc/core-linux-x64-gnu": "1.4.8"
   }
 }

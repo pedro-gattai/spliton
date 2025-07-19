@@ -1,0 +1,15 @@
+name = "spliton"
+compatibility_date = "2024-07-19"
+
+[env.production]
+name = "spliton"
+
+[build]
+command = "npm run build:cf"
+cwd = ""
+watch_dir = "frontend"
+
+[build.environment_variables]
+NODE_VERSION = "20"
+NPM_CONFIG_LEGACY_PEER_DEPS = "true"
+NPM_CONFIG_PREFER_OFFLINE = "true"
