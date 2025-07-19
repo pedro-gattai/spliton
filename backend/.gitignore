@@ -6,11 +6,34 @@
 
 # Node
 node_modules/
+/build
+/prisma/dev.db
+
+# backend specific
+backend/dist/
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+
+# Logs
+logs
+*.log
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+/coverage
+/.nyc_output
 
 # IDEs and editors
 /.idea
@@ -34,10 +57,6 @@ lerna-debug.log*
 
 # Built Visual Studio Code Extensions
 *.vsix
-
-# Logs
-logs
-*.log
 
 # Runtime data
 pids
@@ -146,12 +165,18 @@ public
 .yarn/install-state.gz
 .pnp.*
 
-# OS
-.DS_Store
-Thumbs.db
+# temp directory
+.temp
+.tmp
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Prisma generated files
+/generated/prisma
 
 # NestJS specific
 /dist
 /tmp
 /out-tsc
-/bazel-out 
+/bazel-out
