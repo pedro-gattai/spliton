@@ -1,0 +1,9 @@
+{
+  "url": "https://spliton.vercel.app",
+  "name": "SplitOn",
+  "features": [
+    {
+      "name": "ton_addr"
+    }
+  ]
+} 

@@ -14,6 +14,8 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewExpenseModal } from "@/components/modals/NewExpenseModal";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
+import { useTonWallet } from '@tonconnect/ui-react';
+import { WalletConnectButton } from "@/components/WalletConnectButton";
 
 // Types for form data
 type ExpenseFormData = {
@@ -39,8 +41,10 @@ type GroupFormData = {
 };
 
 export const Dashboard = () => {
-  // Endereço da carteira TON (hardcoded por enquanto)
-  const walletAddress = "EQBKWXX0ijEyFNLhniIVt4qQKA4dgHbrX4xzk7OS_OH3tmlH";
+  // Hook para gerenciar conexão da carteira
+  const wallet = useTonWallet();
+  const isConnected = !!wallet;
+  const address = wallet?.account?.address || null;
   
   // Hook para buscar o saldo da carteira
   const { 
@@ -48,7 +52,7 @@ export const Dashboard = () => {
     isLoading, 
     error, 
     refetch 
-  } = useWalletBalance(walletAddress);
+  } = useWalletBalance(address);
 
   const handleExpenseSubmit = (data: ExpenseFormData) => {
     console.log("Nova despesa criada:", data);
@@ -89,17 +93,25 @@ export const Dashboard = () => {
                   <DollarSign className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">Saldo da Carteira</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isLoading && (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  )}
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
-                  </Badge>
-                </div>
+                              <div className="flex items-center gap-2">
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                )}
+                <Badge variant="secondary" className="bg-white/20 text-white">
+                  {!isConnected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
+                </Badge>
+              </div>
               </div>
               
-              {isLoading ? (
+              {!isConnected ? (
+                <div className="text-center">
+                  <div className="text-lg mb-3">Conecte sua carteira TON</div>
+                  <WalletConnectButton 
+                    variant="outline" 
+                    className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+                  />
+                </div>
+              ) : isLoading ? (
                 <div className="text-2xl font-bold">Carregando...</div>
               ) : error ? (
                 <div className="text-lg text-red-200">
@@ -178,10 +190,12 @@ export const Dashboard = () => {
                 variant="outline" 
                 className="h-20 flex-col gap-2"
                 onClick={() => refetch()}
-                disabled={isLoading}
+                disabled={isLoading || !isConnected}
               >
                 <RefreshCw className={`w-6 h-6 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="text-sm">Atualizar Saldo</span>
+                <span className="text-sm">
+                  {!isConnected ? 'Conectar Carteira' : 'Atualizar Saldo'}
+                </span>
               </Button>
             </div>
           </div>

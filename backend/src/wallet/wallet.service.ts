@@ -36,11 +36,6 @@ export class WalletService {
     try {
       this.logger.log(`Buscando saldo da carteira: ${address}`);
 
-      // Validar formato do endereço TON
-      if (!this.isValidTonAddress(address)) {
-        throw new Error('Endereço TON inválido');
-      }
-
       // Fazer requisição para a API da TON
       const response = await axios.get<TonApiResponse>(
         `${this.tonApiBaseUrl}/getAddressBalance`,
@@ -235,14 +230,7 @@ export class WalletService {
     }
   }
 
-  /**
-   * Valida se um endereço TON é válido
-   */
-  private isValidTonAddress(address: string): boolean {
-    // Formato de endereço TON: EQ + 46 caracteres
-    // Total: 48 caracteres (EQ + 46)
-    return address.startsWith('EQ') && address.length === 48;
-  }
+
 
   /**
    * Converte nano TON para TON
