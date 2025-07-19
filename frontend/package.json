@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "build:dev": "vite build --mode development",
     "build:cf": "rm -rf node_modules package-lock.json && npm install && vite build",
     "lint": "eslint .",
@@ -67,8 +67,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
-    "@rollup/rollup-darwin-arm64": "^4.21.3",
-    "@swc/core-darwin-arm64": "^1.7.26",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
