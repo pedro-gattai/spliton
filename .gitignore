@@ -12,6 +12,15 @@ frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 
+# backend specific
+backend/dist/
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+
 # Backend specific
 backend/dist/
 backend/node_modules/

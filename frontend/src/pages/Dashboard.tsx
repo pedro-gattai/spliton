@@ -6,12 +6,16 @@ import {
   Users, 
   TrendingUp, 
   TrendingDown, 
-  Plus
+  Plus,
+  RefreshCw
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewExpenseModal } from "@/components/modals/NewExpenseModal";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
+import { useTonWallet } from '@tonconnect/ui-react';
+import { WalletConnectButton } from "@/components/WalletConnectButton";
 
 // Types for form data
 type ExpenseFormData = {
@@ -37,6 +41,19 @@ type GroupFormData = {
 };
 
 export const Dashboard = () => {
+  // Hook para gerenciar conexão da carteira
+  const wallet = useTonWallet();
+  const isConnected = !!wallet;
+  const address = wallet?.account?.address || null;
+  
+  // Hook para buscar o saldo da carteira
+  const { 
+    data: walletBalance, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useWalletBalance(address);
+
   const handleExpenseSubmit = (data: ExpenseFormData) => {
     console.log("Nova despesa criada:", data);
     // Aqui você implementaria a lógica para salvar a despesa
@@ -74,13 +91,44 @@ export const Dashboard = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
                   <DollarSign className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Saldo Total</span>
+                  <span className="text-sm font-medium">Saldo da Carteira</span>
                 </div>
+                              <div className="flex items-center gap-2">
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                )}
                 <Badge variant="secondary" className="bg-white/20 text-white">
-                  Conectar Carteira
+                  {!isConnected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
                 </Badge>
               </div>
-              <div className="text-2xl font-bold">0.00 TON</div>
+              </div>
+              
+              {!isConnected ? (
+                <div className="text-center">
+                  <div className="text-lg mb-3">Conecte sua carteira TON</div>
+                  <WalletConnectButton 
+                    variant="outline" 
+                    className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+                  />
+                </div>
+              ) : isLoading ? (
+                <div className="text-2xl font-bold">Carregando...</div>
+              ) : error ? (
+                <div className="text-lg text-red-200">
+                  Erro ao carregar saldo
+                </div>
+              ) : walletBalance ? (
+                <div>
+                  <div className="text-2xl font-bold">
+                    {walletBalance.balanceInTon.toFixed(6)} TON
+                  </div>
+                  <div className="text-xs text-white/70 mt-1">
+                    {walletBalance.address.slice(0, 8)}...{walletBalance.address.slice(-8)}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold">0.00 TON</div>
+              )}
             </Card>
 
             <div className="grid grid-cols-2 gap-4">
@@ -141,9 +189,13 @@ export const Dashboard = () => {
               <Button 
                 variant="outline" 
                 className="h-20 flex-col gap-2"
+                onClick={() => refetch()}
+                disabled={isLoading || !isConnected}
               >
-                <DollarSign className="w-6 h-6" />
-                <span className="text-sm">Conectar Carteira</span>
+                <RefreshCw className={`w-6 h-6 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="text-sm">
+                  {!isConnected ? 'Conectar Carteira' : 'Atualizar Saldo'}
+                </span>
               </Button>
             </div>
           </div>
