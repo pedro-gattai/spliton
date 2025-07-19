@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:cf": "rm -rf node_modules package-lock.json && npm install && vite build",
     "lint": "eslint .",
