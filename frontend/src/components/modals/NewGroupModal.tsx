@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,8 +28,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Users, UserPlus, Trash2, Loader2 } from "lucide-react";
+import { Plus, X, Users, UserPlus, Trash2, Loader2, Search, User, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserSearch } from "@/hooks/useUserSearch";
+import { UserSearchResultItem } from "@/components/UserSearchResult";
+import { type UserSearchResult } from "@/lib/api";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome muito longo"),
@@ -37,8 +40,11 @@ const groupSchema = z.object({
   type: z.enum(["travel", "home", "work", "friends", "other"]),
   currency: z.string().default("TON"),
   members: z.array(z.object({
-    name: z.string().min(1, "Nome é obrigatório"),
-    userId: z.string().min(1, "ID do usuário é obrigatório"),
+    id: z.string().min(1, "ID do usuário é obrigatório"),
+    firstName: z.string().min(1, "Nome é obrigatório"),
+    lastName: z.string().optional(),
+    username: z.string().optional(),
+    tonWalletAddress: z.string().min(1, "Endereço da carteira é obrigatório"),
   })).min(1, "Adicione pelo menos um membro"),
 });
 
@@ -60,10 +66,13 @@ interface NewGroupModalProps {
 
 export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps) => {
   const [open, setOpen] = useState(false);
-  const [newMemberName, setNewMemberName] = useState("");
-  const [newMemberUserId, setNewMemberUserId] = useState("");
+  const [searchIdentifier, setSearchIdentifier] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const { user: searchResult, isSearching, error: searchError, clearSearch } = useUserSearch(searchIdentifier);
 
   const form = useForm<GroupFormData>({
     resolver: zodResolver(groupSchema),
@@ -77,6 +86,18 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   });
 
   const watchedMembers = form.watch("members");
+
+  // Auto-focus search input when modal opens
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  // Show search results when typing
+  useEffect(() => {
+    setShowSearchResults(searchIdentifier.length >= 3 && !isSearching);
+  }, [searchIdentifier, isSearching]);
 
   const handleSubmit = async (data: GroupFormData) => {
     if (!userId) {
@@ -92,9 +113,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     
     try {
       // Extrair userIds dos membros
-      const userIds = data.members
-        .map(member => member.userId)
-        .filter(userId => userId && userId.trim() !== '') as string[];
+      const userIds = data.members.map(member => member.id);
 
       // Preparar dados para a API
       const apiData = {
@@ -106,8 +125,8 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
       await onSubmit?.(apiData);
       setOpen(false);
       form.reset();
-      setNewMemberName("");
-      setNewMemberUserId("");
+      setSearchIdentifier("");
+      clearSearch();
       
       toast({
         title: "Sucesso",
@@ -125,26 +144,38 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     }
   };
 
-  const addMember = () => {
-    if (!newMemberName.trim() || !newMemberUserId.trim()) return;
-    
-    const newMember = {
-      name: newMemberName.trim(),
-      userId: newMemberUserId.trim(),
-    };
-
+  const addMember = (user: UserSearchResult) => {
     const currentMembers = form.getValues("members");
     
     // Verificar se o membro já existe
-    const memberExists = currentMembers.some(
-      member => member.userId === newMember.userId
-    );
+    const memberExists = currentMembers.some(member => member.id === user.id);
 
-    if (!memberExists) {
-      form.setValue("members", [...currentMembers, newMember]);
-      setNewMemberName("");
-      setNewMemberUserId("");
+    if (memberExists) {
+      toast({
+        title: "Usuário já adicionado",
+        description: "Este usuário já está na lista de membros.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    const newMember = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName || undefined,
+      username: user.username || undefined,
+      tonWalletAddress: user.tonWalletAddress,
+    };
+
+    form.setValue("members", [...currentMembers, newMember]);
+    setSearchIdentifier("");
+    clearSearch();
+    setShowSearchResults(false);
+    
+    toast({
+      title: "Membro adicionado",
+      description: `${user.firstName} foi adicionado ao grupo.`,
+    });
   };
 
   const removeMember = (index: number) => {
@@ -153,11 +184,39 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     form.setValue("members", updatedMembers);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addMember();
+  const getSearchIcon = () => {
+    if (searchIdentifier.startsWith('@')) {
+      return <User className="w-4 h-4 text-blue-500" />;
     }
+    if (searchIdentifier.length > 0) {
+      return <Wallet className="w-4 h-4 text-green-500" />;
+    }
+    return <Search className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const getPlaceholder = () => {
+    if (searchIdentifier.startsWith('@')) {
+      return "Digite o username (ex: joao123)";
+    }
+    return "Digite @username ou endereço da carteira";
+  };
+
+  const getFullName = (member: any) => {
+    return member.lastName ? `${member.firstName} ${member.lastName}` : member.firstName;
+  };
+
+  const getMemberIdentifier = (member: any) => {
+    if (member.username) {
+      return `@${member.username}`;
+    }
+    const address = member.tonWalletAddress;
+    return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+  };
+
+  const getMemberInitials = (member: any) => {
+    const first = member.firstName.charAt(0).toUpperCase();
+    const last = member.lastName ? member.lastName.charAt(0).toUpperCase() : '';
+    return first + last;
   };
 
   return (
@@ -243,51 +302,104 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
             <div className="space-y-3">
               <FormLabel>Membros do Grupo</FormLabel>
               
-              {/* Campo para adicionar novo membro */}
-              <div className="space-y-2">
-                <div className="flex gap-2">
+              {/* Campo de busca */}
+              <div className="relative">
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    {getSearchIcon()}
+                  </div>
                   <Input
-                    placeholder="Nome do membro"
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="flex-1"
+                    ref={searchInputRef}
+                    placeholder={getPlaceholder()}
+                    value={searchIdentifier}
+                    onChange={(e) => setSearchIdentifier(e.target.value)}
+                    className="pl-10 pr-10"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={addMember}
-                    disabled={!newMemberName.trim() || !newMemberUserId.trim()}
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
+                  {searchIdentifier && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                      onClick={() => {
+                        setSearchIdentifier("");
+                        clearSearch();
+                        setShowSearchResults(false);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-                
-                <Input
-                  placeholder="ID do usuário"
-                  value={newMemberUserId}
-                  onChange={(e) => setNewMemberUserId(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
+
+                {/* Dica de busca */}
+                {searchIdentifier.length > 0 && searchIdentifier.length < 3 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Digite pelo menos 3 caracteres para buscar
+                  </p>
+                )}
+
+                {/* Resultados da busca */}
+                {showSearchResults && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Buscando usuário...</p>
+                      </div>
+                    ) : searchError ? (
+                      <div className="p-4 text-center">
+                        <p className="text-sm text-destructive">Erro ao buscar usuário</p>
+                      </div>
+                    ) : searchResult ? (
+                      <div className="p-2">
+                        <UserSearchResultItem
+                          user={searchResult}
+                          onSelect={addMember}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Lista de Membros */}
               {watchedMembers.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Membros adicionados ({watchedMembers.length}):
+                    Membros selecionados ({watchedMembers.length}):
                   </p>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
                     {watchedMembers.map((member, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                        className="flex items-center gap-3 p-3 bg-muted rounded-lg"
                       >
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{member.name}</div>
-                          <div className="text-xs text-muted-foreground">{member.userId}</div>
+                        {/* Avatar */}
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                          {getMemberInitials(member)}
                         </div>
+
+                        {/* User Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {getFullName(member)}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {member.username ? (
+                              <User className="w-3 h-3 text-blue-500" />
+                            ) : (
+                              <Wallet className="w-3 h-3 text-green-500" />
+                            )}
+                            <span className="truncate">{getMemberIdentifier(member)}</span>
+                          </div>
+                        </div>
+
+                        {/* Remove Button */}
                         <Button
                           type="button"
                           variant="ghost"
