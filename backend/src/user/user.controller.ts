@@ -146,4 +146,30 @@ export class UserController {
       );
     }
   }
+
+  /**
+   * GET /user/:userId/stats
+   * Retorna estatísticas do usuário
+   */
+  @Get(':userId/stats')
+  async getUserStats(@Param('userId') userId: string) {
+    try {
+      this.logger.log(`Buscando estatísticas do usuário: ${userId}`);
+      const stats = await this.userService.getUserStats(userId);
+      return {
+        success: true,
+        data: stats,
+        message: 'Estatísticas do usuário recuperadas com sucesso',
+      };
+    } catch (error) {
+      this.logger.error(`Erro na rota getUserStats: ${error.message}`);
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
