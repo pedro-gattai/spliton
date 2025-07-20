@@ -189,17 +189,15 @@ export class UserService {
       });
       const totalSpent = Number(totalSpentResult._sum.amount || 0);
 
-      // Total que o usuário deve (participações em despesas)
+      // Total que o usuário deve (participações em despesas não liquidadas)
       const totalOwedResult = await this.prisma.expenseParticipant.aggregate({
         where: {
           userId,
-          expense: {
-            isSettled: false,
-          },
+          isSettled: false,
         },
         _sum: { amountOwed: true },
       });
-      const totalOwed = Number(totalOwedResult._sum.amountOwed || 0);
+      const totalOwed = Number(totalOwedResult._sum?.amountOwed || 0);
 
       // Total que o usuário deve receber (outros devem a ele)
       const totalToReceiveResult =
@@ -207,13 +205,13 @@ export class UserService {
           where: {
             expense: {
               payerId: userId,
-              isSettled: false,
             },
             userId: { not: userId },
+            isSettled: false,
           },
           _sum: { amountOwed: true },
         });
-      const totalToReceive = Number(totalToReceiveResult._sum.amountOwed || 0);
+      const totalToReceive = Number(totalToReceiveResult._sum?.amountOwed || 0);
 
       // Número de grupos que o usuário é membro
       const groupsCount = await this.prisma.groupMember.count({
@@ -221,19 +219,10 @@ export class UserService {
       });
 
       // Número de despesas liquidadas
-      const settledExpenses = await this.prisma.expense.count({
+      const settledExpenses = await this.prisma.expenseParticipant.count({
         where: {
-          OR: [
-            { payerId: userId, isSettled: true },
-            {
-              participants: {
-                some: {
-                  userId,
-                  expense: { isSettled: true },
-                },
-              },
-            },
-          ],
+          userId,
+          isSettled: true,
         },
       });
 
