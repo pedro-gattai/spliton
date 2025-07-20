@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { WalletModule } from './wallet/wallet.module';
+import { ExpensesModule } from './expenses/expenses.module';
 
 @Module({
   imports: [PrismaModule, WalletModule, ExpensesModule],
