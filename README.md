@@ -1,7 +1,7 @@
-<img src="./spliton-logo.png"> </img>
+<img src=".assets/spliton-logo.png"> </img>
 # Spliton 
 Hack-a-TON 
-<img src="./clientRoadMap.png"> </img>
+<img src=".assets/clientRoadMap.png"> </img>
 
 ## Features
 
