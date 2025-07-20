@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # Instalar dependências necessárias para Prisma com PostgreSQL
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl bash
 
 # Criar diretório da aplicação
 WORKDIR /app
@@ -16,9 +16,24 @@ RUN npm install
 # Copiar código fonte do backend (incluindo prisma)
 COPY backend/ ./
 
-# Verificar se os arquivos foram copiados corretamente
-RUN ls -la
-RUN ls -la scripts/
+# Verificar estrutura de arquivos
+RUN echo "📁 Verificando estrutura:" && ls -la
+
+# Criar script de inicialização inline se não existir
+RUN if [ ! -f "scripts/start.sh" ]; then \
+        echo "⚠️ Script start.sh não encontrado, criando inline..." && \
+        mkdir -p scripts && \
+        echo '#!/bin/bash' > scripts/start.sh && \
+        echo 'echo "🚀 Iniciando Backend SplitOn..."' >> scripts/start.sh && \
+        echo 'echo "📊 Executando migrações..."' >> scripts/start.sh && \
+        echo 'npx prisma migrate deploy' >> scripts/start.sh && \
+        echo 'echo "✅ Iniciando aplicação..."' >> scripts/start.sh && \
+        echo 'node dist/src/main.js' >> scripts/start.sh && \
+        chmod +x scripts/start.sh; \
+    fi
+
+# Verificar se o script existe agora
+RUN ls -la scripts/ && cat scripts/start.sh
 
 # Gerar Prisma Client
 RUN npx prisma generate
@@ -26,11 +41,8 @@ RUN npx prisma generate
 # Build da aplicação
 RUN npm run build
 
-# Tornar o script de inicialização executável
-RUN chmod +x scripts/start.sh
-
-# Verificar se o script existe e é executável
-RUN ls -la scripts/start.sh
+# Verificar se o build foi bem-sucedido
+RUN ls -la dist/src/
 
 # Expor porta
 EXPOSE 3000
@@ -39,6 +51,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# ✅ NOVO: Comando que executa migrations e inicia a aplicação
-# Usar o script de inicialização com caminho absoluto
-CMD ["/app/scripts/start.sh"]
+# Comando de inicialização com fallback
+CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy && node dist/src/main.js; fi"]

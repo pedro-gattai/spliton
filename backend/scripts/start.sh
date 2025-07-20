@@ -12,12 +12,14 @@ fi
 
 # Aguardar banco de dados estar disponível (importante para Railway)
 echo "⏳ Aguardando banco de dados estar disponível..."
-until npx prisma db status > /dev/null 2>&1; do
-    echo "⏳ Banco de dados ainda não disponível, tentando novamente em 5s..."
+for i in {1..30}; do
+    if npx prisma db status > /dev/null 2>&1; then
+        echo "✅ Banco de dados disponível!"
+        break
+    fi
+    echo "⏳ Tentativa $i/30 - Aguardando banco..."
     sleep 5
 done
-
-echo "✅ Banco de dados disponível!"
 
 # Executar migrações do Prisma de forma segura
 echo "📊 Executando migrações do Prisma..."
