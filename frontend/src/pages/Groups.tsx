@@ -7,8 +7,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateSafely } from "@/lib/utils";
 
 export const Groups = () => {
   const { user, walletAddress } = useWalletConnection();
@@ -114,10 +113,7 @@ export const Groups = () => {
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {formatDistanceToNow(new Date(group.createdAt), { 
-                            addSuffix: true, 
-                            locale: ptBR 
-                          })}
+                          {formatDateSafely(group.createdAt)}
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />

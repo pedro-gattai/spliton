@@ -18,6 +18,7 @@ import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { useGroups } from "@/hooks/useGroups";
+import { useExpenses } from "@/hooks/useExpenses";
 
 // Types for form data
 type ExpenseFormData = {
@@ -70,13 +71,16 @@ export const Dashboard = () => {
 
   const isLoading = userLoading || balanceLoading;
 
-  const handleExpenseSubmit = (data: any) => {
-    console.log("Nova despesa criada:", data);
-    // Aqui você implementaria a lógica para salvar a despesa
-    // Por exemplo: mutateExpense(data) ou dispatch(createExpense(data))
-  };
-
   const { groups, createGroup } = useGroups(user?.id);
+  const { createExpense } = useExpenses();
+
+  const handleExpenseSubmit = async (data: any) => {
+    try {
+      await createExpense(data);
+    } catch (error) {
+      console.error("Erro ao criar despesa:", error);
+    }
+  };
 
   const handleGroupSubmit = async (data: { name: string; description?: string; memberEmails: string[] }) => {
     try {
@@ -240,7 +244,7 @@ export const Dashboard = () => {
             
             <div className="grid grid-cols-2 gap-4">
               {/* Modal de Nova Despesa integrado */}
-              <NewExpenseModal onSubmit={handleExpenseSubmit}>
+              <NewExpenseModal onSubmit={handleExpenseSubmit} userId={user?.id}>
                 <Button 
                   variant="outline" 
                   className="h-20 flex-col gap-2 w-full"

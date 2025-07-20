@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, Users, DollarSign, Loader2 } from "lucide-react";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { type CreateExpenseRequest } from "@/lib/api";
 
 // 1. Ajuste do schema para refletir o backend
 const expenseSchema = z.object({
@@ -63,12 +64,14 @@ const categories = [
 
 interface NewExpenseModalProps {
   children: React.ReactNode;
-  onSubmit?: (data: ExpenseFormData) => void;
+  onSubmit?: (data: CreateExpenseRequest) => Promise<void>;
+  userId?: string;
 }
 
-export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) => {
+export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalProps) => {
   const [open, setOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { user } = useWalletConnection();
   const { groups, loading: loadingGroups } = useGroups(user?.id);
@@ -91,41 +94,40 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
   });
 
   // 4. handleSubmit: montar payload conforme backend
-  const handleSubmit = (data: ExpenseFormData) => {
-    const payload = {
-      ...data,
-      amount: Number(data.amount),
-      participants: data.participants.map(p => ({
-        userId: p.userId,
-        amountOwed: Number(p.amountOwed)
-      })),
-    };
+  const handleSubmit = async (data: ExpenseFormData) => {
+    if (!userId) {
+      console.error('Usuário não identificado');
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    console.log('Enviando despesa:', payload);
-    
-    // Chamada real para API (ajuste a URL conforme necessário)
-    fetch('/api/expenses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(resp => {
-        console.log('Despesa criada com sucesso:', resp);
-        setOpen(false);
-        form.reset();
-        setSelectedGroup(null);
-        // Aqui você pode adicionar um toast de sucesso
-      })
-      .catch(error => {
-        console.error('Erro ao criar despesa:', error);
-        // Aqui você pode adicionar um toast de erro
-      });
+    try {
+      const payload: CreateExpenseRequest = {
+        groupId: data.groupId,
+        payerId: data.payerId,
+        description: data.description || undefined,
+        amount: Number(data.amount),
+        category: data.category || undefined,
+        receiptImage: data.receiptImage || undefined,
+        splitType: data.splitType,
+        participants: data.participants.map(p => ({
+          userId: p.userId,
+          amountOwed: Number(p.amountOwed)
+        })),
+      };
+      
+      console.log('Enviando despesa:', payload);
+      
+      await onSubmit?.(payload);
+      setOpen(false);
+      form.reset();
+      setSelectedGroup(null);
+    } catch (error) {
+      console.error('Erro ao criar despesa:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 5. handleGroupChange: atualizar participantes e pagador
@@ -385,14 +387,23 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                 variant="outline"
                 className="flex-1"
                 onClick={() => setOpen(false)}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-ton-gradient text-white hover:bg-ton-gradient-dark"
+                disabled={isSubmitting}
               >
-                Criar Despesa
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Despesa"
+                )}
               </Button>
             </div>
           </form>

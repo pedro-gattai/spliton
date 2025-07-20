@@ -13,6 +13,20 @@ interface CreateGroupRequest {
   memberEmails: string[];
 }
 
+interface CreateExpenseRequest {
+  groupId: string;
+  payerId: string;
+  description?: string;
+  amount: number;
+  category?: string;
+  receiptImage?: string;
+  splitType: 'EQUAL' | 'CUSTOM';
+  participants: Array<{
+    userId: string;
+    amountOwed: number;
+  }>;
+}
+
 interface Group {
   id: string;
   name: string;
@@ -44,6 +58,50 @@ interface Group {
   };
 }
 
+interface Expense {
+  id: string;
+  groupId: string;
+  payerId: string;
+  description: string | null;
+  amount: number;
+  category: string | null;
+  receiptImage: string | null;
+  splitType: 'EQUAL' | 'CUSTOM';
+  createdAt: string;
+  updatedAt: string;
+  group: Group;
+  payer: {
+    id: string;
+    telegramId: string;
+    username: string | null;
+    firstName: string;
+    lastName: string | null;
+    email: string | null;
+    tonWalletAddress: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  participants: Array<{
+    id: string;
+    expenseId: string;
+    userId: string;
+    amountOwed: number;
+    isSettled: boolean;
+    settledAt: string | null;
+    user: {
+      id: string;
+      telegramId: string;
+      username: string | null;
+      firstName: string;
+      lastName: string | null;
+      email: string | null;
+      tonWalletAddress: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -65,7 +123,18 @@ class ApiService {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    // Se o backend retornar um array diretamente, criar o formato esperado
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data as T,
+        message: 'Success'
+      };
+    }
+    
+    return data;
   }
 
   // Group APIs
@@ -109,7 +178,55 @@ class ApiService {
     });
     return response.data;
   }
+
+  // Expense APIs
+  async createExpense(data: CreateExpenseRequest): Promise<Expense> {
+    const response = await this.request<Expense>('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  }
+
+  async getExpenses(groupId?: string): Promise<Expense[]> {
+    const url = groupId ? `/expenses?groupId=${groupId}` : '/expenses';
+    const response = await this.request<Expense[]>(url);
+    return response.data;
+  }
+
+  async getExpensesByUser(userId: string): Promise<Expense[]> {
+    const response = await this.request<Expense[]>(`/expenses?userId=${userId}`);
+    return response.data;
+  }
+
+  async getExpenseById(expenseId: string): Promise<Expense> {
+    const response = await this.request<Expense>(`/expenses/${expenseId}`);
+    return response.data;
+  }
+
+  async updateExpense(expenseId: string, data: Partial<CreateExpenseRequest>): Promise<Expense> {
+    const response = await this.request<Expense>(`/expenses/${expenseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  }
+
+  async updateExpenseParticipant(expenseId: string, participantId: string, data: { isSettled: boolean }): Promise<Expense> {
+    const response = await this.request<Expense>(`/expenses/${expenseId}/participants/${participantId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  }
+
+  async deleteExpense(expenseId: string): Promise<{ message: string }> {
+    const response = await this.request<{ message: string }>(`/expenses/${expenseId}`, {
+      method: 'DELETE',
+    });
+    return response.data;
+  }
 }
 
 export const apiService = new ApiService();
-export type { Group, CreateGroupRequest }; 
+export type { Group, CreateGroupRequest, Expense, CreateExpenseRequest }; 
