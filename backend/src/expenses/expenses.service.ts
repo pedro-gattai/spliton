@@ -56,6 +56,35 @@ export class ExpensesService {
     });
   }
 
+  async getExpensesByUser(userId: string) {
+    return await this.prisma.expense.findMany({
+      where: {
+        OR: [
+          { payerId: userId },
+          {
+            participants: {
+              some: {
+                userId: userId,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        group: true,
+        payer: true,
+        participants: {
+          include: {
+            user: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   async createExpense(createExpenseDto: CreateExpenseDto) {
     const { participants, ...expenseData } = createExpenseDto;
 
@@ -152,6 +181,38 @@ export class ExpensesService {
         },
       });
     });
+  }
+
+  async updateExpenseParticipant(expenseId: string, participantId: string, data: { isSettled: boolean }) {
+    // Check if expense exists
+    const existingExpense = await this.prisma.expense.findUnique({
+      where: { id: expenseId },
+    });
+
+    if (!existingExpense) {
+      throw new NotFoundException(`Expense with ID ${expenseId} not found`);
+    }
+
+    // Check if participant exists
+    const existingParticipant = await this.prisma.expenseParticipant.findUnique({
+      where: { id: participantId },
+    });
+
+    if (!existingParticipant) {
+      throw new NotFoundException(`Participant with ID ${participantId} not found`);
+    }
+
+    // Update participant
+    await this.prisma.expenseParticipant.update({
+      where: { id: participantId },
+      data: {
+        isSettled: data.isSettled,
+        settledAt: data.isSettled ? new Date() : null,
+      },
+    });
+
+    // Return the updated expense
+    return await this.getExpenseById(expenseId);
   }
 
   async deleteExpense(id: string) {

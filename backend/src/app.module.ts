@@ -14,11 +14,12 @@ import { EmailModule } from './email/email.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    PrismaModule, 
-    WalletModule, 
-    UserModule, 
-    GroupModule, 
-    EmailModule
+    PrismaModule,
+    WalletModule,
+    ExpensesModule,
+    UserModule,
+    GroupModule,
+    EmailModule,
   ],
 
   controllers: [AppController],
