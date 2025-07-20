@@ -1,5 +1,5 @@
 # Dockerfile para Backend Spliton - Railway Deploy com Migrations Automáticas
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Instalar dependências necessárias para Prisma com PostgreSQL
 RUN apk add --no-cache openssl

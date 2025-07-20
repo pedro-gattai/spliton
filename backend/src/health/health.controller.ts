@@ -17,12 +17,12 @@ export class HealthController {
         database: 'connected',
         service: 'spliton-backend'
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
-        error: error.message,
+        error: error?.message || 'Unknown error',
         service: 'spliton-backend'
       };
     }
@@ -31,8 +31,8 @@ export class HealthController {
   @Get('db')
   async checkDatabase() {
     try {
-      // Verificar se migrations estão aplicadas
-      const result = await this.prisma.$queryRaw`
+      // Verificar se migrations estão aplicadas (tipagem correta)
+      const result = await this.prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*) as count 
         FROM information_schema.tables 
         WHERE table_schema = 'public'
@@ -42,14 +42,14 @@ export class HealthController {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         migrations: 'applied',
-        tables: result[0].count
+        tables: Number(result[0].count)
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         migrations: 'pending',
-        error: error.message
+        error: error?.message || 'Unknown error'
       };
     }
   }
