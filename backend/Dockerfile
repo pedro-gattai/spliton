@@ -1,8 +1,8 @@
-# Dockerfile para Backend Spliton - Railway Deploy
-FROM node:18-alpine
+# Dockerfile para Backend Spliton - Railway Deploy com Migrations Automáticas
+FROM node:20-alpine
 
 # Instalar dependências necessárias para Prisma com PostgreSQL
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl bash
 
 # Criar diretório da aplicação
 WORKDIR /app
@@ -13,32 +13,36 @@ COPY backend/package.json ./
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
-# Verificar se o NestJS CLI está instalado
-RUN npx nest --version
-
 # Copiar código fonte do backend (incluindo prisma)
 COPY backend/ ./
 
-# Gerar Prisma Client (após copiar os arquivos)
-RUN npx prisma generate
+# Verificar estrutura de arquivos
+RUN echo "📁 Verificando estrutura:" && ls -la
 
-# Verificar se os arquivos estão presentes
-RUN ls -la src/
-RUN ls -la prisma/
+# Criar script de inicialização inline se não existir
+RUN if [ ! -f "scripts/start.sh" ]; then \
+        echo "⚠️ Script start.sh não encontrado, criando inline..." && \
+        mkdir -p scripts && \
+        echo '#!/bin/bash' > scripts/start.sh && \
+        echo 'echo "🚀 Iniciando Backend SplitOn..."' >> scripts/start.sh && \
+        echo 'echo "📊 Executando migrações..."' >> scripts/start.sh && \
+        echo 'npx prisma migrate deploy' >> scripts/start.sh && \
+        echo 'echo "✅ Iniciando aplicação..."' >> scripts/start.sh && \
+        echo 'node dist/src/main.js' >> scripts/start.sh && \
+        chmod +x scripts/start.sh; \
+    fi
+
+# Verificar se o script existe agora
+RUN ls -la scripts/ && cat scripts/start.sh
+
+# Gerar Prisma Client
+RUN npx prisma generate
 
 # Build da aplicação
 RUN npm run build
 
 # Verificar se o build foi bem-sucedido
-RUN ls -la dist/
 RUN ls -la dist/src/
-RUN ls -la dist/src/main*
-
-# Mover arquivos para o local correto (opcional)
-RUN cp dist/src/main.js dist/main.js || true
-
-# Tornar o script de inicialização executável (se existir)
-RUN if [ -f "scripts/start.sh" ]; then chmod +x scripts/start.sh; fi
 
 # Expor porta
 EXPOSE 3000
@@ -47,5 +51,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando para iniciar a aplicação (usando npm diretamente)
-CMD ["sh", "-c", "ls -la dist/src/ && node dist/src/main.js"] 
+# Comando de inicialização com fallback
+CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy && node dist/src/main.js; fi"]

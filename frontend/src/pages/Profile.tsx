@@ -25,7 +25,7 @@ export const Profile = () => {
   const { 
     data: walletBalance, 
     isLoading: balanceLoading 
-  } = useWalletBalance(walletAddress);
+  } = useWalletBalance(walletAddress || null);
 
   const isLoading = userLoading || balanceLoading;
 

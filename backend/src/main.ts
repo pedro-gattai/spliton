@@ -20,7 +20,14 @@ async function bootstrap() {
 
   // Configurar CORS
   app.enableCors({
-    origin: ['http://localhost:8080', 'http://localhost:5173'],
+    origin: [
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'https://spliton.pages.dev',
+      'https://developer.spliton.pages.dev',
+      'https://*.spliton.pages.dev',
+      'https://spliton-developer.up.railway.app',
+    ],
     credentials: true,
   });
 

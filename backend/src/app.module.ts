@@ -8,6 +8,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { UserModule } from './user/user.module';
 import { GroupModule } from './group/group.module';
 import { EmailModule } from './email/email.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { EmailModule } from './email/email.module';
     EmailModule,
   ],
 
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

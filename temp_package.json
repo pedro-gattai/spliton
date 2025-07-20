@@ -1,0 +1,14 @@
+import fs from 'fs';
+const packageJson = JSON.parse(fs.readFileSync('backend/package.json', 'utf8'));
+
+// Adicionar scripts para migrations de produção
+packageJson.scripts = {
+  ...packageJson.scripts,
+  "migrate:deploy": "prisma migrate deploy",
+  "migrate:status": "prisma migrate status",
+  "db:status": "prisma db status",
+  "start:railway": "npx prisma migrate deploy && npx prisma generate && npm run start:prod"
+};
+
+fs.writeFileSync('backend/package.json', JSON.stringify(packageJson, null, 2));
+console.log('✅ Scripts adicionados ao package.json');
