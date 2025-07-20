@@ -135,7 +135,7 @@ export class WalletService {
     try {
       this.logger.log(`Buscando saldos de ${addresses.length} carteiras`);
 
-      const balancePromises = addresses.map(async (address) => {
+      const balancePromises = addresses.map(async address => {
         try {
           return await this.getWalletBalance(address);
         } catch (error) {
@@ -186,7 +186,7 @@ export class WalletService {
       });
 
       const balances = await Promise.all(
-        users.map(async (user) => {
+        users.map(async user => {
           try {
             const balance = await this.getWalletBalance(user.tonWalletAddress);
             return {
@@ -227,8 +227,6 @@ export class WalletService {
     }
   }
 
-
-
   /**
    * Converte nano TON para TON
    */
@@ -236,13 +234,15 @@ export class WalletService {
     if (!nanoAmount || nanoAmount === 'undefined' || nanoAmount === 'null') {
       return 0;
     }
-    
+
     try {
       const nano = BigInt(nanoAmount);
       const ton = Number(nano) / 1e9; // 1 TON = 10^9 nano TON
       return Math.round(ton * 1000000) / 1000000; // Arredonda para 6 casas decimais
     } catch (error) {
-      this.logger.warn(`Erro ao converter nano amount '${nanoAmount}': ${error.message}`);
+      this.logger.warn(
+        `Erro ao converter nano amount '${nanoAmount}': ${error.message}`,
+      );
       return 0;
     }
   }

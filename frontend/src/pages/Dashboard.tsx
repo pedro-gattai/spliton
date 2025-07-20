@@ -91,8 +91,8 @@ export const Dashboard = () => {
           {/* Hero Section */}
           <div className="text-center mb-8">
             <img 
-              src="/lovable-uploads/f9dad574-a42b-462c-8497-92ec966518e5.png" 
-              alt="TON Split Logo" 
+              src="/spliton-logo.png" 
+              alt="SplitOn Logo" 
               className="w-16 h-16 mx-auto mb-4"
             />
             <h1 className="text-2xl font-bold mb-2">SplitOn</h1>

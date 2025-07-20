@@ -1,31 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 
-echo "🚀 Starting Spliton Backend with PostgreSQL..."
+# Script de inicialização para o Backend SplitOn
+echo "🚀 Iniciando Backend SplitOn..."
 
-# Show current directory and files
-echo "📁 Current directory: $(pwd)"
-echo "📁 Directory contents:"
-ls -la
+# Verificar se estamos no diretório correto
+if [ ! -f "package.json" ]; then
+    echo "❌ Erro: package.json não encontrado!"
+    echo "Certifique-se de estar no diretório correto."
+    exit 1
+fi
 
-# Show environment variables
-echo "🔧 Environment variables:"
-echo "NODE_ENV: $NODE_ENV"
-echo "PORT: $PORT"
-echo "DATABASE_URL: $DATABASE_URL"
+# Executar migrações do Prisma se necessário
+echo "📊 Executando migrações do Prisma..."
+npx prisma migrate deploy
 
-# Generate Prisma client
-echo "🔧 Generating Prisma client..."
+# Gerar Prisma Client
+echo "🔧 Gerando Prisma Client..."
 npx prisma generate
 
-# Push the database schema (creates the database if it doesn't exist)
-echo "🗄️ Pushing database schema..."
-npx prisma db push
-
-# Show the built files
-echo "📁 Built files:"
-ls -la dist/
-ls -la dist/src/
-
-# Start the application
-echo "🚀 Starting NestJS application..."
-exec node dist/src/main.js 
+# Iniciar a aplicação
+echo "✅ Iniciando aplicação NestJS..."
+npm run start:prod 

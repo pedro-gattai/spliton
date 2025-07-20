@@ -7,23 +7,26 @@ RUN apk add --no-cache openssl
 # Criar diretório da aplicação
 WORKDIR /app
 
-# Copiar package.json
+# Copiar package.json do backend
 COPY backend/package.json ./
 
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
-# Copiar código fonte
+# Copiar código fonte do backend (incluindo prisma)
 COPY backend/ ./
 
-# Gerar Prisma Client
+# Gerar Prisma Client (após copiar os arquivos)
 RUN npx prisma generate
 
 # Build da aplicação
 RUN npm run build
 
-# Tornar o script de inicialização executável
-RUN chmod +x scripts/start.sh
+# Verificar se o build foi bem-sucedido
+RUN ls -la dist/
+
+# Tornar o script de inicialização executável (se existir)
+RUN if [ -f "scripts/start.sh" ]; then chmod +x scripts/start.sh; fi
 
 # Expor porta
 EXPOSE 3000
@@ -32,5 +35,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando para iniciar a aplicação
-CMD ["./scripts/start.sh"] 
+# Comando para iniciar a aplicação (usando npm diretamente)
+CMD ["npm", "run", "start:prod"] 

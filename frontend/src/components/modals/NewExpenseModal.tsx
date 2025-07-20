@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,26 +30,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Users, DollarSign } from "lucide-react";
 
+// 1. Ajuste do schema para refletir o backend
 const expenseSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório").max(100, "Título muito longo"),
+  description: z.string().min(1, "Descrição é obrigatória").max(100, "Descrição muito longa"),
   amount: z.string().min(1, "Valor é obrigatório").refine(
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     "Valor deve ser um número positivo"
   ),
   category: z.string().min(1, "Categoria é obrigatória"),
-  description: z.string().optional(),
   groupId: z.string().min(1, "Grupo é obrigatório"),
-  splitType: z.enum(["equal", "custom", "percentage"]),
-  participants: z.array(z.string()).min(1, "Selecione pelo menos um participante"),
+  payerId: z.string().min(1, "Pagador é obrigatório"),
+  splitType: z.enum(["EQUAL", "CUSTOM"]),
+  participants: z.array(z.object({
+    userId: z.string(),
+    amountOwed: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Valor inválido")
+  })).min(1, "Selecione pelo menos um participante"),
+  receiptImage: z.string().optional(),
 });
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
-
-// Mock data - substituir por dados reais do contexto/API
-const mockGroups = [
-  { id: "1", name: "Viagem para Praia", members: ["João", "Maria", "Pedro"] },
-  { id: "2", name: "Casa Compartilhada", members: ["Ana", "Carlos", "Sofia"] },
-];
 
 const categories = [
   "Alimentação",
@@ -67,43 +66,131 @@ interface NewExpenseModalProps {
 
 export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) => {
   const [open, setOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<typeof mockGroups[0] | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  
+  // 2. Remover mockGroups e buscar grupos reais (exemplo placeholder, ajuste para buscar da API)
+  const [groups, setGroups] = useState<any[]>([]); // [{ id, name, members: [{id, name}] }]
+  const [loadingGroups, setLoadingGroups] = useState(false);
 
+  // Buscar grupos reais (exemplo, ajuste para sua rota real)
+  useEffect(() => {
+    setLoadingGroups(true);
+    // Dados mock temporários até a API estar pronta
+    const mockGroups = [
+      {
+        id: "1",
+        name: "Viagem para Praia",
+        members: [
+          { id: "user1", name: "João" },
+          { id: "user2", name: "Maria" },
+          { id: "user3", name: "Pedro" }
+        ]
+      },
+      {
+        id: "2", 
+        name: "Casa Compartilhada",
+        members: [
+          { id: "user4", name: "Ana" },
+          { id: "user5", name: "Carlos" },
+          { id: "user6", name: "Sofia" }
+        ]
+      }
+    ];
+    
+    // Simular chamada da API
+    setTimeout(() => {
+      setGroups(mockGroups);
+      setLoadingGroups(false);
+    }, 500);
+    
+    // Quando a API estiver pronta, descomente este código:
+    /*
+    fetch('/api/groups')
+      .then(res => res.json())
+      .then(data => setGroups(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error('Erro ao buscar grupos:', err);
+        setGroups([]);
+      })
+      .finally(() => setLoadingGroups(false));
+    */
+  }, []);
+
+  // 3. Ajustar defaultValues e lógica do formulário
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      title: "",
+      description: "",
       amount: "",
       category: "",
-      description: "",
       groupId: "",
-      splitType: "equal",
+      payerId: "",
+      splitType: "EQUAL",
       participants: [],
+      receiptImage: "",
     },
   });
 
+  // 4. handleSubmit: montar payload conforme backend
   const handleSubmit = (data: ExpenseFormData) => {
-    console.log("Dados da despesa:", data);
-    onSubmit?.(data);
-    setOpen(false);
-    form.reset();
-    setSelectedGroup(null);
+    const payload = {
+      ...data,
+      amount: Number(data.amount),
+      participants: data.participants.map(p => ({
+        userId: p.userId,
+        amountOwed: Number(p.amountOwed)
+      })),
+    };
+    
+    console.log('Enviando despesa:', payload);
+    
+    // Chamada real para API (ajuste a URL conforme necessário)
+    fetch('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(resp => {
+        console.log('Despesa criada com sucesso:', resp);
+        setOpen(false);
+        form.reset();
+        setSelectedGroup(null);
+        // Aqui você pode adicionar um toast de sucesso
+      })
+      .catch(error => {
+        console.error('Erro ao criar despesa:', error);
+        // Aqui você pode adicionar um toast de erro
+      });
   };
 
+  // 5. handleGroupChange: atualizar participantes e pagador
   const handleGroupChange = (groupId: string) => {
-    const group = mockGroups.find(g => g.id === groupId);
+    const group = groups.find(g => g.id === groupId);
     setSelectedGroup(group || null);
     form.setValue("groupId", groupId);
     if (group) {
-      form.setValue("participants", group.members);
+      // Preencher participantes com todos do grupo
+      form.setValue("participants", group.members.map((m: any) => ({ userId: m.id, amountOwed: "0" })));
+      form.setValue("payerId", group.members[0]?.id || "");
     }
   };
 
-  const toggleParticipant = (participant: string) => {
+  // Corrigir toggleParticipant para manipular objetos { userId, amountOwed }
+  const toggleParticipant = (userId: string) => {
     const current = form.getValues("participants");
-    const updated = current.includes(participant)
-      ? current.filter(p => p !== participant)
-      : [...current, participant];
+    const exists = current.find((p: any) => p.userId === userId);
+    let updated;
+    if (exists) {
+      updated = current.filter((p: any) => p.userId !== userId);
+    } else {
+      updated = [...current, { userId, amountOwed: "0" }];
+    }
     form.setValue("participants", updated);
   };
 
@@ -122,15 +209,20 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Título */}
+            {/* Descrição */}
             <FormField
               control={form.control}
-              name="title"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título da Despesa</FormLabel>
+                  <FormLabel>Descrição da Despesa</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Jantar no restaurante" {...field} />
+                    <Textarea
+                      placeholder="Ex: Jantar no restaurante"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,11 +286,11 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                   <Select onValueChange={handleGroupChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um grupo" />
+                        <SelectValue placeholder={loadingGroups ? "Carregando..." : "Selecione um grupo"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockGroups.map((group) => (
+                      {Array.isArray(groups) && groups.map((group) => (
                         <SelectItem key={group.id} value={group.id}>
                           <div className="flex items-center gap-2">
                             <Users className="w-4 h-4" />
@@ -213,6 +305,34 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
               )}
             />
 
+            {/* Pagador */}
+            {selectedGroup && (
+              <FormField
+                control={form.control}
+                name="payerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pagador</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o pagador" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {selectedGroup.members.map((member: any) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             {/* Participantes */}
             {selectedGroup && (
               <FormField
@@ -223,19 +343,19 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                     <FormLabel>Participantes</FormLabel>
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
-                        {selectedGroup.members.map((member) => (
+                        {selectedGroup.members.map((member: any) => (
                           <Badge
-                            key={member}
-                            variant={field.value.includes(member) ? "default" : "outline"}
+                            key={member.id}
+                            variant={field.value.some((p: any) => p.userId === member.id) ? "default" : "outline"}
                             className={`cursor-pointer transition-colors ${
-                              field.value.includes(member) 
+                              field.value.some((p: any) => p.userId === member.id) 
                                 ? "bg-ton-gradient text-white" 
                                 : "hover:bg-muted"
                             }`}
-                            onClick={() => toggleParticipant(member)}
+                            onClick={() => toggleParticipant(member.id)}
                           >
-                            {member}
-                            {field.value.includes(member) && (
+                            {member.name}
+                            {field.value.some((p: any) => p.userId === member.id) && (
                               <X className="w-3 h-3 ml-1" />
                             )}
                           </Badge>
@@ -265,9 +385,8 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="equal">Divisão Igual</SelectItem>
-                      <SelectItem value="custom">Valores Personalizados</SelectItem>
-                      <SelectItem value="percentage">Por Porcentagem</SelectItem>
+                      <SelectItem value="EQUAL">Divisão Igual</SelectItem>
+                      <SelectItem value="CUSTOM">Valores Personalizados</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -275,20 +394,15 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
               )}
             />
 
-            {/* Descrição */}
+            {/* Receita */}
             <FormField
               control={form.control}
-              name="description"
+              name="receiptImage"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
+                  <FormLabel>Receita (Opcional)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Adicione detalhes sobre a despesa..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
+                    <Input type="url" placeholder="URL da imagem da nota fiscal" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -31,7 +31,9 @@ export class UserService {
    */
   async createUser(createUserDto: CreateUserDto): Promise<UserResponse> {
     try {
-      this.logger.log(`Criando usuário com endereço: ${createUserDto.tonWalletAddress}`);
+      this.logger.log(
+        `Criando usuário com endereço: ${createUserDto.tonWalletAddress}`,
+      );
 
       // Verificar se já existe um usuário com este endereço
       const existingUser = await this.prisma.user.findFirst({
@@ -39,12 +41,15 @@ export class UserService {
       });
 
       if (existingUser) {
-        this.logger.log(`Usuário já existe com endereço: ${createUserDto.tonWalletAddress}`);
+        this.logger.log(
+          `Usuário já existe com endereço: ${createUserDto.tonWalletAddress}`,
+        );
         return this.mapUserToResponse(existingUser);
       }
 
       // Gerar um telegramId único (usando timestamp + random)
-      const telegramId = BigInt(Date.now()) + BigInt(Math.floor(Math.random() * 1000));
+      const telegramId =
+        BigInt(Date.now()) + BigInt(Math.floor(Math.random() * 1000));
 
       const user = await this.prisma.user.create({
         data: {
@@ -74,7 +79,9 @@ export class UserService {
   /**
    * Busca um usuário pelo endereço da carteira
    */
-  async findByWalletAddress(walletAddress: string): Promise<UserResponse | null> {
+  async findByWalletAddress(
+    walletAddress: string,
+  ): Promise<UserResponse | null> {
     try {
       const user = await this.prisma.user.findFirst({
         where: { tonWalletAddress: walletAddress },
@@ -82,7 +89,9 @@ export class UserService {
 
       return user ? this.mapUserToResponse(user) : null;
     } catch (error) {
-      this.logger.error(`Erro ao buscar usuário por endereço: ${error.message}`);
+      this.logger.error(
+        `Erro ao buscar usuário por endereço: ${error.message}`,
+      );
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
     }
   }
@@ -106,7 +115,10 @@ export class UserService {
   /**
    * Atualiza um usuário
    */
-  async updateUser(id: string, updateData: Partial<CreateUserDto>): Promise<UserResponse> {
+  async updateUser(
+    id: string,
+    updateData: Partial<CreateUserDto>,
+  ): Promise<UserResponse> {
     try {
       const user = await this.prisma.user.update({
         where: { id },
@@ -167,16 +179,25 @@ export class UserService {
   /**
    * Mapeia o modelo do Prisma para a resposta da API
    */
-  private mapUserToResponse(user: any): UserResponse {
+  private mapUserToResponse(user: {
+    id: string;
+    tonWalletAddress: string;
+    firstName: string;
+    lastName?: string | null;
+    username?: string | null;
+    email?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): UserResponse {
     return {
       id: user.id,
       tonWalletAddress: user.tonWalletAddress,
       firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      email: user.email,
+      lastName: user.lastName ?? undefined,
+      username: user.username ?? undefined,
+      email: user.email ?? undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
   }
-} 
+}
