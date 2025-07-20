@@ -1,5 +1,5 @@
 {
-  "url": "https://spliton.vercel.app",
+  "url": "http://localhost:8080",
   "name": "SplitOn",
   "features": [
     {
