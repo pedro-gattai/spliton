@@ -7,16 +7,16 @@ RUN apk add --no-cache openssl
 # Criar diretório da aplicação
 WORKDIR /app
 
-# Copiar package.json
-COPY package.json ./
+# Copiar package.json do backend
+COPY backend/package.json ./
 
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
-# Copiar código fonte
-COPY . .
+# Copiar código fonte do backend (incluindo prisma)
+COPY backend/ ./
 
-# Gerar Prisma Client
+# Gerar Prisma Client (após copiar os arquivos)
 RUN npx prisma generate
 
 # Build da aplicação
