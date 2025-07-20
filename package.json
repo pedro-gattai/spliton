@@ -22,7 +22,8 @@
     "test:frontend": "cd frontend && npm run test",
     "test:backend": "cd backend && npm run test",
     "start": "./scripts/dev.sh",
-    "build:cf": "cd frontend && npm run build:cf:cloudflare"
+    "build:cf": "cd frontend && npm run build:cf:cloudflare",
+    "build:cloudflare": "npm run build:frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
