@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { BigIntInterceptor } from './interceptors/bigint.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Configurar interceptor global para BigInt
+  app.useGlobalInterceptors(new BigIntInterceptor());
+
   // Configurar CORS
   app.enableCors({
     origin: ['http://localhost:8080', 'http://localhost:5173'],

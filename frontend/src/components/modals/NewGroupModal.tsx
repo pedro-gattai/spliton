@@ -28,7 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Users, UserPlus, Trash2 } from "lucide-react";
+import { Plus, X, Users, UserPlus, Trash2, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome muito longo"),
@@ -54,13 +55,16 @@ const groupTypes = [
 
 interface NewGroupModalProps {
   children: React.ReactNode;
-  onSubmit?: (data: GroupFormData) => void;
+  onSubmit?: (data: { name: string; description?: string; memberEmails: string[] }) => Promise<void>;
+  userId?: string;
 }
 
-export const NewGroupModal = ({ children, onSubmit }: NewGroupModalProps) => {
+export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps) => {
   const [open, setOpen] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<GroupFormData>({
     resolver: zodResolver(groupSchema),
@@ -75,13 +79,51 @@ export const NewGroupModal = ({ children, onSubmit }: NewGroupModalProps) => {
 
   const watchedMembers = form.watch("members");
 
-  const handleSubmit = (data: GroupFormData) => {
-    console.log("Dados do grupo:", data);
-    onSubmit?.(data);
-    setOpen(false);
-    form.reset();
-    setNewMemberName("");
-    setNewMemberEmail("");
+  const handleSubmit = async (data: GroupFormData) => {
+    if (!userId) {
+      toast({
+        title: "Erro",
+        description: "Usuário não identificado. Faça login primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Extrair emails dos membros
+      const memberEmails = data.members
+        .map(member => member.email)
+        .filter(email => email && email.trim() !== '') as string[];
+
+      // Preparar dados para a API
+      const apiData = {
+        name: data.name,
+        description: data.description || undefined,
+        memberEmails,
+      };
+
+      await onSubmit?.(apiData);
+      setOpen(false);
+      form.reset();
+      setNewMemberName("");
+      setNewMemberEmail("");
+      
+      toast({
+        title: "Sucesso",
+        description: "Grupo criado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao criar grupo:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao criar grupo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const addMember = () => {
@@ -322,14 +364,23 @@ export const NewGroupModal = ({ children, onSubmit }: NewGroupModalProps) => {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setOpen(false)}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-ton-gradient text-white hover:bg-ton-gradient-dark"
+                disabled={isSubmitting}
               >
-                Criar Grupo
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Grupo"
+                )}
               </Button>
             </div>
           </form>

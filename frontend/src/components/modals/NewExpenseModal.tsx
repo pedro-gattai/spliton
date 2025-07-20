@@ -28,7 +28,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Users, DollarSign } from "lucide-react";
+import { Plus, X, Users, DollarSign, Loader2 } from "lucide-react";
+import { useGroups } from "@/hooks/useGroups";
+import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { type CreateExpenseRequest } from "@/lib/api";
 
 // 1. Ajuste do schema para refletir o backend
 const expenseSchema = z.object({
@@ -61,60 +64,19 @@ const categories = [
 
 interface NewExpenseModalProps {
   children: React.ReactNode;
-  onSubmit?: (data: ExpenseFormData) => void;
+  onSubmit?: (data: CreateExpenseRequest) => Promise<void>;
+  userId?: string;
 }
 
-export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) => {
+export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalProps) => {
   const [open, setOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 2. Remover mockGroups e buscar grupos reais (exemplo placeholder, ajuste para buscar da API)
-  const [groups, setGroups] = useState<any[]>([]); // [{ id, name, members: [{id, name}] }]
-  const [loadingGroups, setLoadingGroups] = useState(false);
+  const { user } = useWalletConnection();
+  const { groups, loading: loadingGroups } = useGroups(user?.id);
 
-  // Buscar grupos reais (exemplo, ajuste para sua rota real)
-  useEffect(() => {
-    setLoadingGroups(true);
-    // Dados mock temporários até a API estar pronta
-    const mockGroups = [
-      {
-        id: "1",
-        name: "Viagem para Praia",
-        members: [
-          { id: "user1", name: "João" },
-          { id: "user2", name: "Maria" },
-          { id: "user3", name: "Pedro" }
-        ]
-      },
-      {
-        id: "2", 
-        name: "Casa Compartilhada",
-        members: [
-          { id: "user4", name: "Ana" },
-          { id: "user5", name: "Carlos" },
-          { id: "user6", name: "Sofia" }
-        ]
-      }
-    ];
-    
-    // Simular chamada da API
-    setTimeout(() => {
-      setGroups(mockGroups);
-      setLoadingGroups(false);
-    }, 500);
-    
-    // Quando a API estiver pronta, descomente este código:
-    /*
-    fetch('/api/groups')
-      .then(res => res.json())
-      .then(data => setGroups(Array.isArray(data) ? data : []))
-      .catch(err => {
-        console.error('Erro ao buscar grupos:', err);
-        setGroups([]);
-      })
-      .finally(() => setLoadingGroups(false));
-    */
-  }, []);
+
 
   // 3. Ajustar defaultValues e lógica do formulário
   const form = useForm<ExpenseFormData>({
@@ -132,41 +94,40 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
   });
 
   // 4. handleSubmit: montar payload conforme backend
-  const handleSubmit = (data: ExpenseFormData) => {
-    const payload = {
-      ...data,
-      amount: Number(data.amount),
-      participants: data.participants.map(p => ({
-        userId: p.userId,
-        amountOwed: Number(p.amountOwed)
-      })),
-    };
+  const handleSubmit = async (data: ExpenseFormData) => {
+    if (!userId) {
+      console.error('Usuário não identificado');
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    console.log('Enviando despesa:', payload);
-    
-    // Chamada real para API (ajuste a URL conforme necessário)
-    fetch('/api/expenses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(resp => {
-        console.log('Despesa criada com sucesso:', resp);
-        setOpen(false);
-        form.reset();
-        setSelectedGroup(null);
-        // Aqui você pode adicionar um toast de sucesso
-      })
-      .catch(error => {
-        console.error('Erro ao criar despesa:', error);
-        // Aqui você pode adicionar um toast de erro
-      });
+    try {
+      const payload: CreateExpenseRequest = {
+        groupId: data.groupId,
+        payerId: data.payerId,
+        description: data.description || undefined,
+        amount: Number(data.amount),
+        category: data.category || undefined,
+        receiptImage: data.receiptImage || undefined,
+        splitType: data.splitType,
+        participants: data.participants.map(p => ({
+          userId: p.userId,
+          amountOwed: Number(p.amountOwed)
+        })),
+      };
+      
+      console.log('Enviando despesa:', payload);
+      
+      await onSubmit?.(payload);
+      setOpen(false);
+      form.reset();
+      setSelectedGroup(null);
+    } catch (error) {
+      console.error('Erro ao criar despesa:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 5. handleGroupChange: atualizar participantes e pagador
@@ -176,8 +137,11 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
     form.setValue("groupId", groupId);
     if (group) {
       // Preencher participantes com todos do grupo
-      form.setValue("participants", group.members.map((m: any) => ({ userId: m.id, amountOwed: "0" })));
-      form.setValue("payerId", group.members[0]?.id || "");
+      form.setValue("participants", group.members.map((m: any) => ({ 
+        userId: m.user.id, 
+        amountOwed: "0" 
+      })));
+      form.setValue("payerId", group.members[0]?.user.id || "");
     }
   };
 
@@ -290,14 +254,21 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Array.isArray(groups) && groups.map((group) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            {group.name}
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {loadingGroups ? (
+                        <div className="flex items-center gap-2 p-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Carregando grupos...</span>
+                        </div>
+                      ) : (
+                        groups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4" />
+                              {group.name}
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -321,8 +292,8 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                       </FormControl>
                       <SelectContent>
                         {selectedGroup.members.map((member: any) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name}
+                          <SelectItem key={member.user.id} value={member.user.id}>
+                            {member.user.firstName}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -345,17 +316,17 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                       <div className="flex flex-wrap gap-2">
                         {selectedGroup.members.map((member: any) => (
                           <Badge
-                            key={member.id}
-                            variant={field.value.some((p: any) => p.userId === member.id) ? "default" : "outline"}
+                            key={member.user.id}
+                            variant={field.value.some((p: any) => p.userId === member.user.id) ? "default" : "outline"}
                             className={`cursor-pointer transition-colors ${
-                              field.value.some((p: any) => p.userId === member.id) 
+                              field.value.some((p: any) => p.userId === member.user.id) 
                                 ? "bg-ton-gradient text-white" 
                                 : "hover:bg-muted"
                             }`}
-                            onClick={() => toggleParticipant(member.id)}
+                            onClick={() => toggleParticipant(member.user.id)}
                           >
-                            {member.name}
-                            {field.value.some((p: any) => p.userId === member.id) && (
+                            {member.user.firstName}
+                            {field.value.some((p: any) => p.userId === member.user.id) && (
                               <X className="w-3 h-3 ml-1" />
                             )}
                           </Badge>
@@ -416,14 +387,23 @@ export const NewExpenseModal = ({ children, onSubmit }: NewExpenseModalProps) =>
                 variant="outline"
                 className="flex-1"
                 onClick={() => setOpen(false)}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-ton-gradient text-white hover:bg-ton-gradient-dark"
+                disabled={isSubmitting}
               >
-                Criar Despesa
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Despesa"
+                )}
               </Button>
             </div>
           </form>
