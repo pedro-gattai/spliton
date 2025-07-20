@@ -16,6 +16,7 @@ model User {
   username          String?
   firstName         String   @map("first_name")
   lastName          String?  @map("last_name")
+  email             String?  @unique
   tonWalletAddress  String   @map("ton_wallet_address")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
