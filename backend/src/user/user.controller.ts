@@ -172,4 +172,31 @@ export class UserController {
       );
     }
   }
+
+  /**
+   * GET /user/search/:identifier
+   * Busca um usuário por username ou endereço da carteira
+   */
+  @Get('search/:identifier')
+  async searchUser(@Param('identifier') identifier: string) {
+    try {
+      this.logger.log(`Buscando usuário por identificador: ${identifier}`);
+      const user = await this.userService.searchUser(identifier);
+
+      return {
+        success: true,
+        data: user,
+        message: user ? 'Usuário encontrado' : 'Usuário não encontrado',
+      };
+    } catch (error) {
+      this.logger.error(`Erro na rota searchUser: ${error.message}`);
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

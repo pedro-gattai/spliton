@@ -101,6 +101,48 @@ export class UserService {
   }
 
   /**
+   * Busca um usuário por username ou endereço da carteira
+   */
+  async searchUser(identifier: string): Promise<UserResponse | null> {
+    try {
+      this.logger.log(`Buscando usuário por identificador: ${identifier}`);
+
+      // Limpar e validar o identificador
+      const cleanIdentifier = identifier.trim();
+
+      if (!cleanIdentifier) {
+        return null;
+      }
+
+      // Tentar encontrar por username primeiro (case insensitive, remover @ se presente)
+      const usernameQuery = cleanIdentifier.startsWith('@')
+        ? cleanIdentifier.substring(1)
+        : cleanIdentifier;
+
+      let user = await this.prisma.user.findFirst({
+        where: {
+          username: {
+            equals: usernameQuery,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      // Se não encontrado por username, tentar por endereço da carteira
+      if (!user) {
+        user = await this.prisma.user.findFirst({
+          where: { tonWalletAddress: cleanIdentifier },
+        });
+      }
+
+      return user ? this.mapUserToResponse(user) : null;
+    } catch (error) {
+      this.logger.error(`Erro ao buscar usuário: ${error.message}`);
+      throw new Error(`Falha ao buscar usuário: ${error.message}`);
+    }
+  }
+
+  /**
    * Busca um usuário pelo ID
    */
   async findById(id: string): Promise<UserResponse | null> {
