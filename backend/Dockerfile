@@ -36,5 +36,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # ✅ NOVO: Comando que executa migrations e inicia a aplicação
-# Usar o script de inicialização
-CMD ["./scripts/start.sh"]
+# Usar o script de inicialização com caminho absoluto
+CMD ["/app/scripts/start.sh"]
