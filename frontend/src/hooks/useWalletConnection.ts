@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTonWallet } from '@tonconnect/ui-react';
+import { apiService } from '@/lib/api';
 
 interface User {
   id: string;
@@ -32,13 +33,12 @@ export const useWalletConnection = () => {
   const fetchUser = async (walletAddress: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user/wallet/${walletAddress}`);
-      const result = await response.json();
+      const result = await apiService.findUserByWalletAddress(walletAddress);
 
       console.log('Resultado da busca de usuário:', result);
 
-      if (result.success && result.data) {
-        setUser(result.data);
+      if (result) {
+        setUser(result);
         setShowRegistrationModal(false);
       } else {
         // Usuário não existe, mostrar modal de registro
