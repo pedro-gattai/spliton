@@ -52,7 +52,7 @@ export class UserController {
     try {
       this.logger.log(`Buscando usuário por endereço: ${address}`);
       const user = await this.userService.findByWalletAddress(address);
-      
+
       if (!user) {
         return {
           success: false,
@@ -87,7 +87,7 @@ export class UserController {
     try {
       this.logger.log(`Buscando usuário por ID: ${id}`);
       const user = await this.userService.findById(id);
-      
+
       if (!user) {
         throw new HttpException(
           {
@@ -146,4 +146,4 @@ export class UserController {
       );
     }
   }
-} 
+}
