@@ -4,8 +4,31 @@ import { Badge } from "@/components/ui/badge";
 import { User, Wallet, Settings, Shield, Bell, Moon } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
+import { WalletConnectButton } from "@/components/WalletConnectButton";
+import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal";
 
 export const Profile = () => {
+  // Hook para gerenciar conexão da carteira e usuário
+  const { 
+    user, 
+    isLoading: userLoading, 
+    connected, 
+    walletAddress, 
+    showRegistrationModal, 
+    handleUserCreated, 
+    handleRegistrationModalClose 
+  } = useWalletConnection();
+  
+  // Hook para buscar o saldo da carteira
+  const { 
+    data: walletBalance, 
+    isLoading: balanceLoading 
+  } = useWalletBalance(walletAddress);
+
+  const isLoading = userLoading || balanceLoading;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mobile-container min-h-screen pb-20">
@@ -22,22 +45,28 @@ export const Profile = () => {
                 <User className="w-8 h-8 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-semibold">Usuário</h2>
-                <p className="text-muted-foreground">user@email.com</p>
+                <h2 className="text-xl font-semibold">
+                  {user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuário'}
+                </h2>
+                <p className="text-muted-foreground">
+                  {user?.email || user?.username || (walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Não conectado')}
+                </p>
                 <Badge variant="secondary" className="mt-2">
                   <img 
                     src="/lovable-uploads/f9dad574-a42b-462c-8497-92ec966518e5.png" 
                     alt="TON" 
                     className="w-4 h-4 mr-1"
                   />
-                  Desconectado
+                  {connected ? 'Conectado' : 'Desconectado'}
                 </Badge>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">0.00</div>
+                <div className="text-2xl font-bold text-primary">
+                  {isLoading ? '...' : walletBalance ? walletBalance.balanceInTon.toFixed(6) : '0.00'}
+                </div>
                 <div className="text-xs text-muted-foreground">TON</div>
               </div>
               <div className="text-center">
@@ -50,10 +79,16 @@ export const Profile = () => {
               </div>
             </div>
 
-            <Button className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark">
-              <Wallet className="w-4 h-4 mr-2" />
-              Conectar Carteira TON
-            </Button>
+            {connected ? (
+              <WalletConnectButton 
+                variant="outline" 
+                className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark"
+              />
+            ) : (
+              <WalletConnectButton 
+                className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark"
+              />
+            )}
           </Card>
 
           {/* Settings */}
@@ -108,6 +143,16 @@ export const Profile = () => {
       </div>
 
       <BottomNavigation />
+      
+      {/* Modal de Registro de Usuário */}
+      {showRegistrationModal && walletAddress && (
+        <UserRegistrationModal
+          isOpen={showRegistrationModal}
+          onClose={handleRegistrationModalClose}
+          walletAddress={walletAddress}
+          onUserCreated={handleUserCreated}
+        />
+      )}
     </div>
   );
 };
