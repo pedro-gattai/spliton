@@ -83,48 +83,6 @@ export const useGroups = (userId?: string) => {
     }
   }, [toast]);
 
-  // Validar convite
-  const validateInvite = useCallback(async (token: string) => {
-    try {
-      return await apiService.validateInvite(token);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao validar convite';
-      toast({
-        title: "Erro",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw err;
-    }
-  }, [toast]);
-
-  // Aceitar convite
-  const acceptInvite = useCallback(async (token: string) => {
-    if (!userId) {
-      throw new Error('Usuário não identificado');
-    }
-
-    try {
-      const group = await apiService.acceptInvite(token, userId);
-      setGroups(prev => [group, ...prev]);
-      
-      toast({
-        title: "Sucesso",
-        description: "Convite aceito com sucesso!",
-      });
-
-      return group;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao aceitar convite';
-      toast({
-        title: "Erro",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw err;
-    }
-  }, [userId, toast]);
-
   // Buscar grupos quando userId mudar
   useEffect(() => {
     fetchGroups();
@@ -136,8 +94,6 @@ export const useGroups = (userId?: string) => {
     error,
     createGroup,
     getGroupById,
-    validateInvite,
-    acceptInvite,
     refetch: fetchGroups,
   };
 }; 

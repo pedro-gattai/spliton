@@ -10,7 +10,7 @@ interface CreateGroupRequest {
   name: string;
   description?: string;
   createdBy: string;
-  memberEmails: string[];
+  userIds: string[];
 }
 
 interface CreateExpenseRequest {
@@ -153,29 +153,6 @@ class ApiService {
 
   async getGroupById(groupId: string): Promise<Group> {
     const response = await this.request<Group>(`/group/${groupId}`);
-    return response.data;
-  }
-
-  async validateInvite(token: string): Promise<{
-    isValid: boolean;
-    groupName?: string;
-    email?: string;
-    message?: string;
-  }> {
-    const response = await this.request<{
-      isValid: boolean;
-      groupName?: string;
-      email?: string;
-      message?: string;
-    }>(`/group/invite/validate/${token}`);
-    return response.data;
-  }
-
-  async acceptInvite(token: string, userId: string): Promise<Group> {
-    const response = await this.request<Group>('/group/invite/accept', {
-      method: 'POST',
-      body: JSON.stringify({ token, userId }),
-    });
     return response.data;
   }
 
