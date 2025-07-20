@@ -14,7 +14,16 @@ const fetchWalletBalance = async (address: string): Promise<WalletBalance> => {
     throw new Error(`Erro ao buscar saldo: ${response.statusText}`);
   }
   
-  return response.json();
+  const data = await response.json();
+  console.log('Dados do saldo recebidos:', data);
+  
+  // O backend retorna os dados diretamente, não em um wrapper
+  return {
+    address: data.address || address,
+    balance: data.balance || '0',
+    balanceInTon: data.balanceInTon || 0,
+    lastUpdated: data.lastUpdated || new Date().toISOString(),
+  };
 };
 
 export const useWalletBalance = (address: string | null) => {
@@ -24,5 +33,7 @@ export const useWalletBalance = (address: string | null) => {
     enabled: !!address,
     refetchInterval: 30000, // Refetch a cada 30 segundos
     staleTime: 10000, // Considera dados frescos por 10 segundos
+    retry: 3,
+    retryDelay: 1000,
   });
 }; 
