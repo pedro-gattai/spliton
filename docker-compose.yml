@@ -21,5 +21,13 @@ services:
     depends_on:
       - postgres
 
+  telegram-bot:
+    build: ./telegramBot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:

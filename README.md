@@ -16,6 +16,7 @@ Hack-a-TON
 - Integração com QR Code para pagamentos -> nice to have (P2)
 - Sistema de comentários ou anexos em despesas -> nice to have (P1)
 - Interface web/mobile responsiva
+- **Bot do Telegram** para acesso rápido ao aplicativo
 
 ## Project Structure
 
@@ -23,12 +24,14 @@ This is a monorepo containing:
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS + Shadcn/ui
 - **Backend**: NestJS + TypeScript
 - **Smart Contracts**: TON blockchain contracts (Tact)
+- **Telegram Bot**: Python bot para acesso rápido ao app
 
 ## Step-by-step guide
 
 ### Prerequisites
 - Node.js >= 18.0.0
 - npm >= 8.0.0
+- Python 3.11+ (para o bot do Telegram)
 - Install the Tact Language extension in your IDE (e.g., VSCode)
 
 ### Setup
@@ -69,4 +72,63 @@ For the TON smart contracts:
 ```bash
 cd simple-counter
 yarn create ton simple-counter --type tact-counter --contractName SimpleCounter
+```
+
+## Deploy
+
+### Backend (Railway)
+
+O backend já está configurado para deploy no Railway. Veja o arquivo `railway.toml` para configurações.
+
+### Frontend (Cloudflare Pages)
+
+O frontend está configurado para deploy no Cloudflare Pages.
+
+### Bot do Telegram (Railway)
+
+#### Passo a Passo para Deploy do Bot:
+
+1. **Criar novo projeto no Railway:**
+   - Acesse [railway.app](https://railway.app)
+   - Clique em "New Project"
+   - Selecione "Deploy from GitHub repo"
+   - Conecte seu repositório GitHub
+
+2. **Configurar o projeto:**
+   - Selecione a pasta `telegramBot` como diretório raiz
+   - O Railway detectará automaticamente o Dockerfile
+
+3. **Configurar variáveis de ambiente:**
+   - Vá em "Variables" no projeto
+   - Adicione a variável:
+     - `BOT_TOKEN`: Seu token do bot (obtido no @BotFather)
+
+4. **Deploy:**
+   - O Railway fará o deploy automaticamente
+   - Monitore os logs para verificar se o bot iniciou corretamente
+
+#### Comandos do Bot:
+
+- `/start` - Mensagem de boas-vindas com botão para o app
+- `/help` - Instruções de uso
+
+#### Desenvolvimento Local do Bot:
+
+```bash
+cd telegramBot
+pip install -r requirements.txt
+cp env.example .env
+# Edite o .env com seu BOT_TOKEN
+python bot.py
+```
+
+### Estrutura de Deploy:
+
+```
+Railway (Backend + Bot)
+├── Backend (NestJS) - Porta 3000
+└── Bot Telegram (Python) - Container separado
+
+Cloudflare Pages (Frontend)
+└── React App - Porta 5173
 ```
