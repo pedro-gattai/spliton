@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,12 +28,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Users, DollarSign, Loader2 } from "lucide-react";
+import { 
+  Plus, 
+  X, 
+  Users, 
+  DollarSign, 
+  Loader2, 
+  Crown,
+  Calculator,
+  Receipt,
+  AlertCircle
+} from "lucide-react";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { useGroupBalances } from "@/hooks/useGroupBalances";
 import { type CreateExpenseRequest } from "@/lib/api";
+import { DivisionPreview } from "@/components/DivisionPreview";
+import { ParticipantSelector } from "@/components/ParticipantSelector";
+import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { useToast } from "@/hooks/use-toast";
 
-// 1. Ajuste do schema para refletir o backend
+// Schema atualizado com validações em tempo real
 const expenseSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória").max(100, "Descrição muito longa"),
   amount: z.string().min(1, "Valor é obrigatório").refine(
@@ -53,13 +68,14 @@ const expenseSchema = z.object({
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
 
+// Categorias inteligentes baseadas no contexto
 const categories = [
-  "Alimentação",
-  "Transporte", 
-  "Hospedagem",
-  "Entretenimento",
-  "Compras",
-  "Outros"
+  { value: "Alimentação", icon: "🍕", keywords: ["comida", "restaurante", "jantar", "almoço", "café", "pizza", "hamburger"] },
+  { value: "Transporte", icon: "🚗", keywords: ["uber", "taxi", "gasolina", "estacionamento", "ônibus", "metrô"] },
+  { value: "Hospedagem", icon: "🏨", keywords: ["hotel", "airbnb", "hospedagem", "acomodação"] },
+  { value: "Entretenimento", icon: "🎬", keywords: ["cinema", "show", "bar", "balada", "teatro", "museu"] },
+  { value: "Compras", icon: "🛍️", keywords: ["compras", "shopping", "loja", "mercado", "supermercado"] },
+  { value: "Outros", icon: "📋", keywords: [] }
 ];
 
 interface NewExpenseModalProps {
@@ -72,13 +88,15 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const [open, setOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [totalValidation, setTotalValidation] = useState({ isValid: true, message: '' });
   
   const { user } = useWalletConnection();
   const { groups, loading: loadingGroups } = useGroups(user?.id);
+  const { balances } = useGroupBalances(user?.id, selectedGroup ? [selectedGroup.id] : []);
+  const { toast } = useToast();
 
-
-
-  // 3. Ajustar defaultValues e lógica do formulário
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
@@ -93,23 +111,126 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
     },
   });
 
-  // 4. handleSubmit: montar payload conforme backend
+  const watchedAmount = form.watch("amount");
+  const watchedParticipants = form.watch("participants");
+  const watchedSplitType = form.watch("splitType");
+  const watchedDescription = form.watch("description");
+
+  // Cálculo automático em tempo real
+  const calculateSplit = useCallback((amount: number, participants: any[], splitType: string) => {
+    if (splitType === 'EQUAL' && participants.length > 0) {
+      const amountPerPerson = amount / participants.length;
+      const updatedParticipants = participants.map(p => ({
+        ...p,
+        amountOwed: amountPerPerson.toFixed(2)
+      }));
+      form.setValue("participants", updatedParticipants);
+    }
+  }, [form]);
+
+  // Executar cálculo quando mudar valor, participantes ou tipo de divisão
+  useEffect(() => {
+    const amount = Number(watchedAmount);
+    if (amount > 0 && watchedParticipants.length > 0) {
+      calculateSplit(amount, watchedParticipants, watchedSplitType);
+    }
+  }, [watchedAmount, watchedParticipants.length, watchedSplitType, calculateSplit]);
+
+  // Validação da soma em tempo real
+  useEffect(() => {
+    if (watchedSplitType === 'CUSTOM' && watchedParticipants.length > 0) {
+      const amount = Number(watchedAmount);
+      const totalOwed = watchedParticipants.reduce((sum, p) => sum + Number(p.amountOwed), 0);
+      const difference = Math.abs(totalOwed - amount);
+      
+      if (difference > 0.01) {
+        setTotalValidation({
+          isValid: false,
+          message: `A soma deve ser R$ ${amount.toFixed(2)}. Atual: R$ ${totalOwed.toFixed(2)}`
+        });
+      } else {
+        setTotalValidation({ isValid: true, message: '' });
+      }
+    } else {
+      setTotalValidation({ isValid: true, message: '' });
+    }
+  }, [watchedAmount, watchedParticipants, watchedSplitType]);
+
+  // Sugerir categoria baseada na descrição
+  const suggestCategory = useCallback((description: string) => {
+    if (!description) return;
+    
+    const lowerDesc = description.toLowerCase();
+    for (const category of categories) {
+      if (category.keywords.some(keyword => lowerDesc.includes(keyword))) {
+        form.setValue("category", category.value);
+        break;
+      }
+    }
+  }, [form]);
+
+  useEffect(() => {
+    suggestCategory(watchedDescription);
+  }, [watchedDescription, suggestCategory]);
+
+  // Sugerir pagador baseado no saldo
+  const suggestPayer = useCallback((group: any) => {
+    if (!group || !balances[group.id]) return;
+    
+    const groupBalance = balances[group.id];
+    if (groupBalance.status === 'receive') {
+      // Se o usuário deve receber, sugerir ele como pagador
+      form.setValue("payerId", user?.id || "");
+    } else {
+      // Senão, sugerir quem tem melhor saldo
+      const bestPayer = group.members.find((m: any) => {
+        const memberBalance = balances[group.id];
+        return memberBalance && memberBalance.status === 'receive';
+      });
+      
+      if (bestPayer) {
+        form.setValue("payerId", bestPayer.user.id);
+      }
+    }
+  }, [balances, form, user?.id]);
+
   const handleSubmit = async (data: ExpenseFormData) => {
     if (!userId) {
-      console.error('Usuário não identificado');
+      toast({
+        title: "Erro",
+        description: "Usuário não identificado. Faça login primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!totalValidation.isValid) {
+      toast({
+        title: "Erro de Validação",
+        description: totalValidation.message,
+        variant: "destructive",
+      });
       return;
     }
 
     setIsSubmitting(true);
     
     try {
+      // Processar imagem se houver
+      let receiptImageUrl = data.receiptImage;
+      if (receiptFile) {
+        // Aqui você implementaria o upload da imagem
+        // Por enquanto, vamos usar uma URL mock
+        receiptImageUrl = URL.createObjectURL(receiptFile);
+      }
+
       const payload: CreateExpenseRequest = {
         groupId: data.groupId,
         payerId: data.payerId,
         description: data.description || undefined,
         amount: Number(data.amount),
         category: data.category || undefined,
-        receiptImage: data.receiptImage || undefined,
+        receiptImage: receiptImageUrl || undefined,
         splitType: data.splitType,
         participants: data.participants.map(p => ({
           userId: p.userId,
@@ -117,45 +238,99 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
         })),
       };
       
-      console.log('Enviando despesa:', payload);
-      
       await onSubmit?.(payload);
       setOpen(false);
       form.reset();
       setSelectedGroup(null);
+      setReceiptFile(null);
+      setReceiptPreview(null);
+      
+      toast({
+        title: "Sucesso",
+        description: "Despesa criada com sucesso!",
+      });
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao criar despesa",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 5. handleGroupChange: atualizar participantes e pagador
   const handleGroupChange = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
     setSelectedGroup(group || null);
     form.setValue("groupId", groupId);
+    
     if (group) {
       // Preencher participantes com todos do grupo
-      form.setValue("participants", group.members.map((m: any) => ({ 
+      const allParticipants = group.members.map((m: any) => ({ 
         userId: m.user.id, 
         amountOwed: "0" 
-      })));
-      form.setValue("payerId", group.members[0]?.user.id || "");
+      }));
+      form.setValue("participants", allParticipants);
+      
+      // Sugerir pagador
+      suggestPayer(group);
     }
   };
 
-  // Corrigir toggleParticipant para manipular objetos { userId, amountOwed }
   const toggleParticipant = (userId: string) => {
     const current = form.getValues("participants");
     const exists = current.find((p: any) => p.userId === userId);
     let updated;
+    
     if (exists) {
       updated = current.filter((p: any) => p.userId !== userId);
     } else {
       updated = [...current, { userId, amountOwed: "0" }];
     }
+    
     form.setValue("participants", updated);
+  };
+
+  const updateParticipantAmount = (userId: string, amount: string) => {
+    const current = form.getValues("participants");
+    const updated = current.map((p: any) => 
+      p.userId === userId ? { ...p, amountOwed: amount } : p
+    );
+    form.setValue("participants", updated);
+  };
+
+  const handleReceiptUpload = (file: File | null) => {
+    setReceiptFile(file);
+    
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setReceiptPreview(url);
+      form.setValue("receiptImage", url);
+    } else {
+      setReceiptPreview(null);
+      form.setValue("receiptImage", "");
+    }
+  };
+
+  const getPayerName = () => {
+    if (!selectedGroup || !form.getValues("payerId")) return "";
+    const payer = selectedGroup.members.find((m: any) => m.user.id === form.getValues("payerId"));
+    return payer ? payer.user.firstName : "";
+  };
+
+  const getParticipantsWithNames = () => {
+    if (!selectedGroup) return [];
+    
+    return watchedParticipants.map(p => {
+      const member = selectedGroup.members.find((m: any) => m.user.id === p.userId);
+      return {
+        userId: p.userId,
+        userName: member ? member.user.firstName : "Desconhecido",
+        amountOwed: Number(p.amountOwed)
+      };
+    });
   };
 
   return (
@@ -163,50 +338,36 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-primary" />
-            Nova Despesa
+            ✨ Nova Despesa
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Descrição */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição da Despesa</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Ex: Jantar no restaurante"
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Informações Básicas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Informações da Despesa
+              </h3>
 
-            {/* Valor e Categoria */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* Descrição */}
               <FormField
                 control={form.control}
-                name="amount"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor (TON)</FormLabel>
+                    <FormLabel>Descrição da Despesa</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="0.00" 
-                        {...field} 
+                      <Textarea
+                        placeholder="Ex: Jantar no restaurante italiano"
+                        className="resize-none"
+                        rows={2}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -214,171 +375,218 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              {/* Valor e Categoria */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor (TON)</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field} 
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecionar" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.value} value={category.value}>
+                              <div className="flex items-center gap-2">
+                                <span>{category.icon}</span>
+                                {category.value}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Grupo */}
-            <FormField
-              control={form.control}
-              name="groupId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grupo</FormLabel>
-                  <Select onValueChange={handleGroupChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingGroups ? "Carregando..." : "Selecione um grupo"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {loadingGroups ? (
-                        <div className="flex items-center gap-2 p-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Carregando grupos...</span>
-                        </div>
-                      ) : (
-                        groups.map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4" />
-                              {group.name}
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Grupo e Pagador */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Grupo e Pagador
+              </h3>
 
-            {/* Pagador */}
-            {selectedGroup && (
+              {/* Grupo */}
               <FormField
                 control={form.control}
-                name="payerId"
+                name="groupId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Pagador</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Grupo</FormLabel>
+                    <Select onValueChange={handleGroupChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o pagador" />
+                          <SelectValue placeholder={loadingGroups ? "Carregando..." : "Selecione um grupo"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {selectedGroup.members.map((member: any) => (
-                          <SelectItem key={member.user.id} value={member.user.id}>
-                            {member.user.firstName}
-                          </SelectItem>
-                        ))}
+                        {loadingGroups ? (
+                          <div className="flex items-center gap-2 p-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Carregando grupos...</span>
+                          </div>
+                        ) : (
+                          groups.map((group) => (
+                            <SelectItem key={group.id} value={group.id}>
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4" />
+                                {group.name}
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
 
-            {/* Participantes */}
+              {/* Pagador */}
+              {selectedGroup && (
+                <FormField
+                  control={form.control}
+                  name="payerId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pagador</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o pagador" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {selectedGroup.members.map((member: any) => {
+                            const balance = balances[selectedGroup.id];
+                            const isRecommended = balance?.status === 'receive' && member.user.id === user?.id;
+                            
+                            return (
+                              <SelectItem key={member.user.id} value={member.user.id}>
+                                <div className="flex items-center gap-2">
+                                  <Crown className="w-4 h-4" />
+                                  {member.user.firstName}
+                                  {isRecommended && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Recomendado
+                                    </Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            {/* Participantes e Divisão */}
             {selectedGroup && (
-              <FormField
-                control={form.control}
-                name="participants"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Participantes</FormLabel>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedGroup.members.map((member: any) => (
-                          <Badge
-                            key={member.user.id}
-                            variant={field.value.some((p: any) => p.userId === member.user.id) ? "default" : "outline"}
-                            className={`cursor-pointer transition-colors ${
-                              field.value.some((p: any) => p.userId === member.user.id) 
-                                ? "bg-ton-gradient text-white" 
-                                : "hover:bg-muted"
-                            }`}
-                            onClick={() => toggleParticipant(member.user.id)}
-                          >
-                            {member.user.firstName}
-                            {field.value.some((p: any) => p.userId === member.user.id) && (
-                              <X className="w-3 h-3 ml-1" />
-                            )}
-                          </Badge>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Clique para selecionar/remover participantes
-                      </p>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Calculator className="w-5 h-5" />
+                  Participantes e Divisão
+                </h3>
+
+                {/* Seleção de Participantes */}
+                <ParticipantSelector
+                  members={selectedGroup.members}
+                  selected={watchedParticipants}
+                  onToggle={toggleParticipant}
+                  onAmountChange={updateParticipantAmount}
+                  splitType={watchedSplitType}
+                  showAvatars={true}
+                  showBalance={true}
+                />
+
+                {/* Tipo de Divisão */}
+                <FormField
+                  control={form.control}
+                  name="splitType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Divisão</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="EQUAL">Divisão Igual</SelectItem>
+                          <SelectItem value="CUSTOM">Valores Personalizados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Preview da Divisão */}
+                {Number(watchedAmount) > 0 && watchedParticipants.length > 0 && (
+                  <DivisionPreview
+                    amount={Number(watchedAmount)}
+                    participants={getParticipantsWithNames()}
+                    payer={getPayerName()}
+                    splitType={watchedSplitType}
+                  />
                 )}
-              />
+
+                {/* Validação da Soma */}
+                {!totalValidation.isValid && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <span className="text-sm text-red-600">{totalValidation.message}</span>
+                  </div>
+                )}
+              </div>
             )}
 
-            {/* Tipo de Divisão */}
-            <FormField
-              control={form.control}
-              name="splitType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Divisão</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="EQUAL">Divisão Igual</SelectItem>
-                      <SelectItem value="CUSTOM">Valores Personalizados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Upload de Recibo */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Receipt className="w-5 h-5" />
+                Foto do Recibo (Opcional)
+              </h3>
 
-            {/* Receita */}
-            <FormField
-              control={form.control}
-              name="receiptImage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Receita (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="url" placeholder="URL da imagem da nota fiscal" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <ReceiptUpload
+                onUpload={handleReceiptUpload}
+                preview={receiptPreview}
+                maxSize="5MB"
+                acceptedTypes={['image/jpeg', 'image/png', 'image/webp']}
+              />
+            </div>
 
             {/* Botões */}
             <div className="flex gap-3 pt-4">
@@ -394,7 +602,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
               <Button
                 type="submit"
                 className="flex-1 bg-ton-gradient text-white hover:bg-ton-gradient-dark"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !totalValidation.isValid}
               >
                 {isSubmitting ? (
                   <>
@@ -402,7 +610,10 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                     Criando...
                   </>
                 ) : (
-                  "Criar Despesa"
+                  <>
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Criar Despesa
+                  </>
                 )}
               </Button>
             </div>
