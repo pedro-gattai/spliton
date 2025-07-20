@@ -2,9 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/tact-lang/tact/main/src/config/configSchema.json",
   "projects": [
     {
-      "name": "SimpleCounter",
-      "path": "contracts/simple_counter.tact",
-      "output": "build/SimpleCounter",
+      "name": "Split",
+      "path": "contracts/split.tact",
+      "output": "build/split",
       "options": {
         "debug": false,
         "external": false
