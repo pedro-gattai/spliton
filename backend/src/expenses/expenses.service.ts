@@ -88,7 +88,7 @@ export class ExpensesService {
   async createExpense(createExpenseDto: CreateExpenseDto) {
     const { participants, ...expenseData } = createExpenseDto;
 
-    return await this.prisma.$transaction(async (prisma) => {
+    return await this.prisma.$transaction(async prisma => {
       // Create the expense
       const expense = await prisma.expense.create({
         data: expenseData,
@@ -101,7 +101,7 @@ export class ExpensesService {
       // Create participants
       if (participants && participants.length > 0) {
         await prisma.expenseParticipant.createMany({
-          data: participants.map((participant) => ({
+          data: participants.map(participant => ({
             expenseId: expense.id,
             userId: participant.userId,
             amountOwed: participant.amountOwed,
@@ -137,7 +137,7 @@ export class ExpensesService {
       throw new NotFoundException(`Expense with ID ${id} not found`);
     }
 
-    return await this.prisma.$transaction(async (prisma) => {
+    return await this.prisma.$transaction(async prisma => {
       // Update the expense
       await prisma.expense.update({
         where: { id },
@@ -158,7 +158,7 @@ export class ExpensesService {
         // Create new participants
         if (participants.length > 0) {
           await prisma.expenseParticipant.createMany({
-            data: participants.map((participant) => ({
+            data: participants.map(participant => ({
               expenseId: id,
               userId: participant.userId,
               amountOwed: participant.amountOwed,
@@ -183,7 +183,11 @@ export class ExpensesService {
     });
   }
 
-  async updateExpenseParticipant(expenseId: string, participantId: string, data: { isSettled: boolean }) {
+  async updateExpenseParticipant(
+    expenseId: string,
+    participantId: string,
+    data: { isSettled: boolean },
+  ) {
     // Check if expense exists
     const existingExpense = await this.prisma.expense.findUnique({
       where: { id: expenseId },
@@ -194,12 +198,16 @@ export class ExpensesService {
     }
 
     // Check if participant exists
-    const existingParticipant = await this.prisma.expenseParticipant.findUnique({
-      where: { id: participantId },
-    });
+    const existingParticipant = await this.prisma.expenseParticipant.findUnique(
+      {
+        where: { id: participantId },
+      },
+    );
 
     if (!existingParticipant) {
-      throw new NotFoundException(`Participant with ID ${participantId} not found`);
+      throw new NotFoundException(
+        `Participant with ID ${participantId} not found`,
+      );
     }
 
     // Update participant
