@@ -12,7 +12,7 @@ fi
 
 # Aguardar banco de dados estar disponível (importante para Railway)
 echo "⏳ Aguardando banco de dados estar disponível..."
-for i in {1..30}; do
+for i in {1..3}; do
     if npx prisma db status > /dev/null 2>&1; then
         echo "✅ Banco de dados disponível!"
         break
