@@ -126,11 +126,11 @@ export const Profile = () => {
 
           {/* App Info */}
           <Card className="p-6 text-center">
-            <img 
-              src="/lovable-uploads/f9dad574-a42b-462c-8497-92ec966518e5.png" 
-              alt="SplitOn Logo" 
-              className="w-12 h-12 mx-auto mb-4"
-            />
+                          <img 
+                src="/spliton-logo.png" 
+                alt="SplitOn Logo" 
+                className="w-12 h-12 mx-auto mb-4"
+              />
             <h3 className="font-semibold mb-2">SplitOn</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Versão 1.0.0

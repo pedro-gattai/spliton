@@ -135,7 +135,7 @@ export class WalletController {
         );
       }
 
-      const addresses = addressesParam.split(',').map((addr) => addr.trim());
+      const addresses = addressesParam.split(',').map(addr => addr.trim());
 
       if (addresses.length === 0) {
         throw new HttpException(
@@ -215,6 +215,4 @@ export class WalletController {
       );
     }
   }
-
-  
 }
