@@ -8,13 +8,17 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Copiar package.json do backend
-COPY backend/package.json ./
+COPY package.json ./
 
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
 # Copiar código fonte do backend (incluindo prisma)
-COPY backend/ ./
+COPY . .
+
+# Verificar se os arquivos foram copiados corretamente
+RUN ls -la
+RUN ls -la scripts/
 
 # Gerar Prisma Client
 RUN npx prisma generate
@@ -25,7 +29,7 @@ RUN npm run build
 # Tornar o script de inicialização executável
 RUN chmod +x scripts/start.sh
 
-# Verificar se o script existe
+# Verificar se o script existe e é executável
 RUN ls -la scripts/start.sh
 
 # Expor porta
