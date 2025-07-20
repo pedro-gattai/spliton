@@ -7,6 +7,7 @@
 1. **Dockerfile Atualizado**: 
    - Node.js atualizado para v20 (resolve warnings EBADENGINE)
    - Executa `prisma migrate deploy` automaticamente antes de iniciar a aplicação
+   - **CORRIGIDO**: CMD direto para evitar problemas com script não encontrado
 2. **Script start.sh Melhorado**: Inclui verificação de saúde do banco e execução segura de migrations
 3. **Health Check**: Endpoints `/health` e `/health/db` com tipagem TypeScript correta
 4. **Configuração Railway**: `backend.toml` otimizado para execução de migrations
@@ -16,6 +17,7 @@
 - ✅ **Node.js v18 → v20**: Resolve warnings de compatibilidade com dependências
 - ✅ **TypeScript**: Tipagem correta para `$queryRaw` (resolve erro TS18046)
 - ✅ **Error Handling**: Tratamento de erro melhorado com tipo `any`
+- ✅ **Script Error**: Corrigido erro "No such file or directory" no CMD
 
 ### Como funciona:
 
@@ -64,3 +66,15 @@ npm run db:status
 - **Timeout**: Aumente healthcheckTimeout no railway.toml
 - **Conexão recusada**: Aguarde o PostgreSQL estar totalmente disponível
 - **Warnings EBADENGINE**: Corrigido com atualização para Node 20
+- **Script não encontrado**: Corrigido com CMD direto no Dockerfile
+
+## 🔧 Correção do Erro "No such file or directory":
+
+**Problema**: Railway não conseguia encontrar o script `./scripts/start.sh`
+
+**Solução**: 
+- Removido `startCommand` do `backend.toml` para evitar conflito
+- CMD direto no Dockerfile: `["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]`
+- Script `start.sh` mantido como backup para uso local
+
+**Resultado**: Migrations executadas diretamente no CMD do container

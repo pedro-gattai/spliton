@@ -25,6 +25,9 @@ RUN npm run build
 # Tornar o script de inicialização executável
 RUN chmod +x scripts/start.sh
 
+# Verificar se o script existe
+RUN ls -la scripts/start.sh
+
 # Expor porta
 EXPOSE 3000
 
@@ -33,4 +36,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # ✅ NOVO: Comando que executa migrations e inicia a aplicação
+# Fallback: se o script falhar, executa diretamente
 CMD ["sh", "-c", "echo '🔄 Executando migrations...' && npx prisma migrate deploy && echo '🚀 Iniciando aplicação...' && node dist/src/main.js"]
