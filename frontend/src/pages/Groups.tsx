@@ -13,7 +13,7 @@ export const Groups = () => {
   const { user, walletAddress } = useWalletConnection();
   const { groups, loading, error, createGroup } = useGroups(user?.id);
 
-  const handleGroupSubmit = async (data: { name: string; description?: string; memberEmails: string[] }) => {
+  const handleGroupSubmit = async (data: { name: string; description?: string; userIds: string[] }) => {
     try {
       await createGroup(data);
     } catch (error) {

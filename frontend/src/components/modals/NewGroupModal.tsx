@@ -38,8 +38,7 @@ const groupSchema = z.object({
   currency: z.string().default("TON"),
   members: z.array(z.object({
     name: z.string().min(1, "Nome é obrigatório"),
-    email: z.string().email("Email inválido").optional(),
-    telegramId: z.string().optional(),
+    userId: z.string().min(1, "ID do usuário é obrigatório"),
   })).min(1, "Adicione pelo menos um membro"),
 });
 
@@ -55,14 +54,14 @@ const groupTypes = [
 
 interface NewGroupModalProps {
   children: React.ReactNode;
-  onSubmit?: (data: { name: string; description?: string; memberEmails: string[] }) => Promise<void>;
+  onSubmit?: (data: { name: string; description?: string; userIds: string[] }) => Promise<void>;
   userId?: string;
 }
 
 export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps) => {
   const [open, setOpen] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
-  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberUserId, setNewMemberUserId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -92,23 +91,23 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     setIsSubmitting(true);
     
     try {
-      // Extrair emails dos membros
-      const memberEmails = data.members
-        .map(member => member.email)
-        .filter(email => email && email.trim() !== '') as string[];
+      // Extrair userIds dos membros
+      const userIds = data.members
+        .map(member => member.userId)
+        .filter(userId => userId && userId.trim() !== '') as string[];
 
       // Preparar dados para a API
       const apiData = {
         name: data.name,
         description: data.description || undefined,
-        memberEmails,
+        userIds,
       };
 
       await onSubmit?.(apiData);
       setOpen(false);
       form.reset();
       setNewMemberName("");
-      setNewMemberEmail("");
+      setNewMemberUserId("");
       
       toast({
         title: "Sucesso",
@@ -127,25 +126,24 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   };
 
   const addMember = () => {
-    if (!newMemberName.trim()) return;
+    if (!newMemberName.trim() || !newMemberUserId.trim()) return;
     
     const newMember = {
       name: newMemberName.trim(),
-      email: newMemberEmail.trim() || undefined,
-      telegramId: undefined, // Pode ser implementado para capturar do contexto do Telegram
+      userId: newMemberUserId.trim(),
     };
 
     const currentMembers = form.getValues("members");
     
     // Verificar se o membro já existe
     const memberExists = currentMembers.some(
-      member => member.name.toLowerCase() === newMember.name.toLowerCase()
+      member => member.userId === newMember.userId
     );
 
     if (!memberExists) {
       form.setValue("members", [...currentMembers, newMember]);
       setNewMemberName("");
-      setNewMemberEmail("");
+      setNewMemberUserId("");
     }
   };
 
@@ -260,17 +258,16 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
                     variant="outline"
                     size="icon"
                     onClick={addMember}
-                    disabled={!newMemberName.trim()}
+                    disabled={!newMemberName.trim() || !newMemberUserId.trim()}
                   >
                     <UserPlus className="w-4 h-4" />
                   </Button>
                 </div>
                 
                 <Input
-                  placeholder="Email (opcional)"
-                  type="email"
-                  value={newMemberEmail}
-                  onChange={(e) => setNewMemberEmail(e.target.value)}
+                  placeholder="ID do usuário"
+                  value={newMemberUserId}
+                  onChange={(e) => setNewMemberUserId(e.target.value)}
                   onKeyPress={handleKeyPress}
                 />
               </div>
@@ -289,9 +286,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
                       >
                         <div className="flex-1">
                           <div className="font-medium text-sm">{member.name}</div>
-                          {member.email && (
-                            <div className="text-xs text-muted-foreground">{member.email}</div>
-                          )}
+                          <div className="text-xs text-muted-foreground">{member.userId}</div>
                         </div>
                         <Button
                           type="button"
