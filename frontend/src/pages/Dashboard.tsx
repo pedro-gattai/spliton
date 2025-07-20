@@ -17,6 +17,7 @@ import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
+import { useGroups } from "@/hooks/useGroups";
 
 // Types for form data
 type ExpenseFormData = {
@@ -59,7 +60,7 @@ export const Dashboard = () => {
     isLoading: balanceLoading, 
     error, 
     refetch 
-  } = useWalletBalance(walletAddress);
+  } = useWalletBalance(walletAddress || null);
 
   // Debug logs
   console.log('Dashboard - Wallet Address:', walletAddress);
@@ -69,16 +70,20 @@ export const Dashboard = () => {
 
   const isLoading = userLoading || balanceLoading;
 
-  const handleExpenseSubmit = (data: ExpenseFormData) => {
+  const handleExpenseSubmit = (data: any) => {
     console.log("Nova despesa criada:", data);
     // Aqui você implementaria a lógica para salvar a despesa
     // Por exemplo: mutateExpense(data) ou dispatch(createExpense(data))
   };
 
-  const handleGroupSubmit = (data: GroupFormData) => {
-    console.log("Novo grupo criado:", data);
-    // Aqui você implementaria a lógica para salvar o grupo
-    // Por exemplo: mutateGroup(data) ou dispatch(createGroup(data))
+  const { groups, createGroup } = useGroups(user?.id);
+
+  const handleGroupSubmit = async (data: { name: string; description?: string; memberEmails: string[] }) => {
+    try {
+      await createGroup(data);
+    } catch (error) {
+      console.error("Erro ao criar grupo:", error);
+    }
   };
 
   return (
@@ -176,21 +181,57 @@ export const Dashboard = () => {
           {/* Grupos */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Seus Grupos</h2>
-            <Card className="p-8 text-center">
-              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-semibold mb-2">Nenhum grupo ativo</h3>
-              <p className="text-muted-foreground mb-4">
-                Crie seu primeiro grupo para começar a dividir despesas
-              </p>
-              
-              {/* Modal de Criar Grupo integrado */}
-              <NewGroupModal onSubmit={handleGroupSubmit}>
-                <Button className="bg-ton-gradient text-white hover:bg-ton-gradient-dark">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Grupo
-                </Button>
-              </NewGroupModal>
-            </Card>
+            
+            {groups.length > 0 ? (
+              <div className="space-y-3">
+                {groups.slice(0, 3).map((group) => (
+                  <Card key={group.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{group.name}</h4>
+                        {group.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {group.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {group.members.length} membros
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {group.inviteCode}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                
+                {groups.length > 3 && (
+                  <div className="text-center">
+                    <Button variant="outline" size="sm">
+                      Ver todos os {groups.length} grupos
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Card className="p-8 text-center">
+                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="font-semibold mb-2">Nenhum grupo ativo</h3>
+                <p className="text-muted-foreground mb-4">
+                  Crie seu primeiro grupo para começar a dividir despesas
+                </p>
+                
+                {/* Modal de Criar Grupo integrado */}
+                <NewGroupModal onSubmit={handleGroupSubmit} userId={user?.id}>
+                  <Button className="bg-ton-gradient text-white hover:bg-ton-gradient-dark">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Grupo
+                  </Button>
+                </NewGroupModal>
+              </Card>
+            )}
           </div>
 
           {/* Ações Rápidas */}
