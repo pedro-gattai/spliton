@@ -1,4 +1,5 @@
 import { DarkModeToggle } from "./DarkModeToggle";
+import { WalletConnectButton } from "./WalletConnectButton";
 
 export const AppHeader = () => {
   return (
@@ -11,7 +12,10 @@ export const AppHeader = () => {
         />
         <span className="font-semibold text-primary">SplitOn</span>
       </div>
-      <DarkModeToggle />
+      <div className="flex items-center gap-2">
+        <WalletConnectButton size="sm" variant="outline" />
+        <DarkModeToggle />
+      </div>
     </header>
   );
 };
