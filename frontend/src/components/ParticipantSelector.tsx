@@ -1,4 +1,4 @@
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "./ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { User, Wallet } from "lucide-react";
 
