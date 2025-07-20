@@ -10,16 +10,8 @@ export interface WalletBalance {
 }
 
 export interface TonApiResponse {
-  result: {
-    balance: string;
-    state: string;
-    code: string;
-    data: string;
-    last_transaction_id: {
-      lt: string;
-      hash: string;
-    };
-  };
+  ok: boolean;
+  result: string;
 }
 
 @Injectable()
@@ -45,7 +37,10 @@ export class WalletService {
         },
       );
 
-      const balance = response.data.result.balance || '0';
+      this.logger.log(`Resposta da API TON:`, response.data);
+
+      // A API retorna { ok: true, result: "balance" }
+      const balance = response.data.result || '0';
       const balanceInTon = this.convertNanoToTon(balance);
 
       const walletBalance: WalletBalance = {
@@ -55,7 +50,9 @@ export class WalletService {
         lastUpdated: new Date(),
       };
 
-      this.logger.log(`Saldo encontrado: ${balanceInTon} TON`);
+      this.logger.log(
+        `Saldo encontrado: ${balanceInTon} TON (${balance} nano)`,
+      );
       return walletBalance;
     } catch (error) {
       this.logger.error(
