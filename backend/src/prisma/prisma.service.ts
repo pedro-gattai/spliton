@@ -10,7 +10,9 @@ export class PrismaService
     super({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/spliton?schema=public',
+          url:
+            process.env.DATABASE_URL ||
+            'postgresql://postgres:password@localhost:5432/spliton?schema=public',
         },
       },
       log: ['query', 'info', 'warn', 'error'],
