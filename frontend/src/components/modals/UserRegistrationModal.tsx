@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
+import { apiService } from "@/lib/api";
 
 const userRegistrationSchema = z.object({
   firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -44,37 +45,21 @@ export const UserRegistrationModal = ({
   const onSubmit = async (data: UserRegistrationForm) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tonWalletAddress: walletAddress,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          username: data.username,
-          email: data.email,
-        }),
+      const result = await apiService.createUser({
+        tonWalletAddress: walletAddress,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        email: data.email,
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao criar usuário");
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({
-          title: "Sucesso!",
-          description: "Usuário criado com sucesso.",
-        });
-        onUserCreated(result.data);
-        reset();
-        onClose();
-      } else {
-        throw new Error(result.message || "Erro ao criar usuário");
-      }
+      toast({
+        title: "Sucesso!",
+        description: "Usuário criado com sucesso.",
+      });
+      onUserCreated(result);
+      reset();
+      onClose();
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
       toast({

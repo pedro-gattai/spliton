@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ? '/api' : 'http://localhost:3000/api';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -223,6 +223,44 @@ class ApiService {
   async deleteExpense(expenseId: string): Promise<{ message: string }> {
     const response = await this.request<{ message: string }>(`/expenses/${expenseId}`, {
       method: 'DELETE',
+    });
+    return response.data;
+  }
+
+  // User APIs
+  async createUser(data: {
+    tonWalletAddress: string;
+    firstName: string;
+    lastName?: string;
+    email?: string;
+    username?: string;
+  }): Promise<any> {
+    const response = await this.request<any>('/user', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  }
+
+  async findUserByWalletAddress(walletAddress: string): Promise<any> {
+    const response = await this.request<any>(`/user/wallet/${walletAddress}`);
+    return response.data;
+  }
+
+  async findUserById(id: string): Promise<any> {
+    const response = await this.request<any>(`/user/${id}`);
+    return response.data;
+  }
+
+  async updateUser(id: string, data: Partial<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+  }>): Promise<any> {
+    const response = await this.request<any>(`/user/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
     return response.data;
   }
