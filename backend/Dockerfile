@@ -36,5 +36,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # ✅ NOVO: Comando que executa migrations e inicia a aplicação
-# Fallback: se o script falhar, executa diretamente
-CMD ["sh", "-c", "echo '🔄 Executando migrations...' && npx prisma migrate deploy && echo '🚀 Iniciando aplicação...' && node dist/src/main.js"]
+# Usar o script de inicialização
+CMD ["./scripts/start.sh"]
