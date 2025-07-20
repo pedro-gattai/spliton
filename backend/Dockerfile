@@ -31,7 +31,11 @@ RUN npm run build
 
 # Verificar se o build foi bem-sucedido
 RUN ls -la dist/
-RUN ls -la dist/main*
+RUN ls -la dist/src/
+RUN ls -la dist/src/main*
+
+# Mover arquivos para o local correto (opcional)
+RUN cp dist/src/main.js dist/main.js || true
 
 # Tornar o script de inicialização executável (se existir)
 RUN if [ -f "scripts/start.sh" ]; then chmod +x scripts/start.sh; fi
@@ -44,4 +48,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Comando para iniciar a aplicação (usando npm diretamente)
-CMD ["sh", "-c", "ls -la dist/ && npm run start:prod"] 
+CMD ["sh", "-c", "ls -la dist/src/ && node dist/src/main.js"] 
