@@ -8,13 +8,13 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Copiar package.json do backend
-COPY package.json ./
+COPY backend/package.json ./
 
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
 # Copiar código fonte do backend (incluindo prisma)
-COPY . .
+COPY backend/ ./
 
 # Verificar se os arquivos foram copiados corretamente
 RUN ls -la
