@@ -5,7 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { WalletModule } from './wallet/wallet.module';
 
 @Module({
-  imports: [PrismaModule, WalletModule],
+  imports: [PrismaModule, WalletModule, ExpensesModule],
   controllers: [AppController],
   providers: [AppService],
 })
