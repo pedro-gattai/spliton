@@ -64,11 +64,6 @@ export class UserService {
 
       this.logger.log(`Usuário criado com sucesso: ${user.id}`);
 
-      // Verificar se há convites pendentes para este email
-      if (createUserDto.email) {
-        await this.processPendingInvites(user.id, createUserDto.email);
-      }
-
       return this.mapUserToResponse(user);
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`);
@@ -129,50 +124,6 @@ export class UserService {
     } catch (error) {
       this.logger.error(`Erro ao atualizar usuário: ${error.message}`);
       throw new Error(`Falha ao atualizar usuário: ${error.message}`);
-    }
-  }
-
-  /**
-   * Processa convites pendentes para um usuário recém-criado
-   */
-  private async processPendingInvites(userId: string, email: string): Promise<void> {
-    try {
-      const pendingInvites = await this.prisma.groupInvite.findMany({
-        where: {
-          email,
-          status: 'PENDING',
-          expiresAt: {
-            gt: new Date(),
-          },
-        },
-        include: {
-          group: true,
-        },
-      });
-
-      for (const invite of pendingInvites) {
-        // Adicionar usuário ao grupo
-        await this.prisma.groupMember.create({
-          data: {
-            groupId: invite.groupId,
-            userId,
-            role: 'MEMBER',
-          },
-        });
-
-        // Marcar convite como aceito
-        await this.prisma.groupInvite.update({
-          where: { id: invite.id },
-          data: {
-            status: 'ACCEPTED',
-            acceptedAt: new Date(),
-          },
-        });
-
-        this.logger.log(`Usuário ${userId} adicionado ao grupo ${invite.groupId} via convite pendente`);
-      }
-    } catch (error) {
-      this.logger.error(`Erro ao processar convites pendentes para ${email}:`, error);
     }
   }
 

@@ -18,7 +18,10 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Get()
-  async getExpenses(@Query('groupId') groupId?: string, @Query('userId') userId?: string) {
+  async getExpenses(
+    @Query('groupId') groupId?: string,
+    @Query('userId') userId?: string,
+  ) {
     if (userId) {
       return await this.expensesService.getExpensesByUser(userId);
     }
@@ -53,7 +56,11 @@ export class ExpensesController {
     @Param('participantId') participantId: string,
     @Body() data: { isSettled: boolean },
   ) {
-    return await this.expensesService.updateExpenseParticipant(id, participantId, data);
+    return await this.expensesService.updateExpenseParticipant(
+      id,
+      participantId,
+      data,
+    );
   }
 
   @Delete(':id')

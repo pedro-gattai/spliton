@@ -18,7 +18,7 @@ export class GroupController {
 
   /**
    * POST /group
-   * Cria um novo grupo e envia convites
+   * Cria um novo grupo e adiciona membros diretamente
    */
   @Post()
   async createGroup(@Body() createGroupDto: CreateGroupDto) {
@@ -28,7 +28,7 @@ export class GroupController {
       return {
         success: true,
         data: group,
-        message: 'Grupo criado com sucesso e convites enviados',
+        message: 'Grupo criado com sucesso',
       };
     } catch (error) {
       this.logger.error(`Erro na rota createGroup: ${error.message}`);
@@ -102,58 +102,4 @@ export class GroupController {
       );
     }
   }
-
-  /**
-   * POST /group/invite/accept
-   * Aceita um convite por token
-   */
-  @Post('invite/accept')
-  async acceptInvite(
-    @Body() body: { token: string; userId: string },
-  ) {
-    try {
-      this.logger.log(`Aceitando convite para usuário: ${body.userId}`);
-      const group = await this.groupService.acceptInvite(body.token, body.userId);
-      return {
-        success: true,
-        data: group,
-        message: 'Convite aceito com sucesso',
-      };
-    } catch (error) {
-      this.logger.error(`Erro na rota acceptInvite: ${error.message}`);
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  /**
-   * GET /group/invite/validate/:token
-   * Valida um convite por token
-   */
-  @Get('invite/validate/:token')
-  async validateInvite(@Param('token') token: string) {
-    try {
-      this.logger.log(`Validando convite: ${token}`);
-      const validation = await this.groupService.validateInvite(token);
-      return {
-        success: validation.isValid,
-        data: validation,
-        message: validation.isValid ? 'Convite válido' : validation.message,
-      };
-    } catch (error) {
-      this.logger.error(`Erro na rota validateInvite: ${error.message}`);
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-} 
+}

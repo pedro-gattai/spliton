@@ -24,7 +24,7 @@ export class BigIntInterceptor implements NestInterceptor {
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => this.transformValue(item));
+      return value.map(item => this.transformValue(item));
     }
 
     if (typeof value === 'object') {
@@ -41,8 +41,6 @@ export class BigIntInterceptor implements NestInterceptor {
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      map((data) => this.transformValue(data)),
-    );
+    return next.handle().pipe(map(data => this.transformValue(data)));
   }
-} 
+}
