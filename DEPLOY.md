@@ -3,7 +3,7 @@
 ## Configuração no Cloudflare Pages
 
 ### Build Settings:
-- **Build command**: `npm run build:frontend`
+- **Build command**: `npm run build:cloudflare`
 - **Build output directory**: `frontend/dist` 
 - **Root directory**: (deixar vazio)
 
@@ -21,6 +21,9 @@ npm run dev
 
 # Build frontend
 npm run build:frontend
+
+# Build para Cloudflare
+npm run build:cloudflare
 
 # Build completo
 npm run build

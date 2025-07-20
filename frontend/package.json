@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "build:prod": "npm ci --legacy-peer-deps && npm run build",
     "build:clean": "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps",
-    "build:cf:cloudflare": "npm ci --legacy-peer-deps --prefer-offline && npm install @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu --save-dev && npm run build"
+    "build:cf:cloudflare": "npm ci --legacy-peer-deps --prefer-offline && npm install @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu --save-dev && npm run build",
+    "build:cloudflare": "npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -86,9 +87,11 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.19"
   },
-  "overrides": {
-    "rollup": "^4.18.0",
+  "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.18.0",
     "@swc/core-linux-x64-gnu": "1.4.8"
+  },
+  "overrides": {
+    "rollup": "^4.18.0"
   }
 }
