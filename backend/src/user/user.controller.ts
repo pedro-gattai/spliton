@@ -180,20 +180,29 @@ export class UserController {
   @Get('search/:identifier')
   async searchUser(@Param('identifier') identifier: string) {
     try {
-      this.logger.log(`Buscando usuário por identificador: ${identifier}`);
-      const user = await this.userService.searchUser(identifier);
+      this.logger.log(`🔍 Controller: Buscando usuário por: "${identifier}"`);
 
+      // DECODIFICAR parâmetro URL:
+      const decodedIdentifier = decodeURIComponent(identifier);
+
+      const user = await this.userService.searchUser(decodedIdentifier);
+
+      // SEMPRE retornar success: true, mesmo quando não encontra:
       return {
         success: true,
-        data: user,
+        data: user, // pode ser null
         message: user ? 'Usuário encontrado' : 'Usuário não encontrado',
       };
     } catch (error) {
-      this.logger.error(`Erro na rota searchUser: ${error.message}`);
+      this.logger.error(
+        `❌ Controller: Erro na rota searchUser: ${error.message}`,
+      );
+
       throw new HttpException(
         {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          error: error.message,
+          success: false,
+          error: 'Erro interno do servidor',
+          details: error.message,
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
