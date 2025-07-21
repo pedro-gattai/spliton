@@ -1,24 +1,73 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Search, Filter, Loader2, Calendar, User } from "lucide-react";
+import { Users, Plus, Search, Filter, Loader2, Calendar, User, TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { SettlementButton } from "@/components/SettlementButton";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { useGroupBalances } from "@/hooks/useGroupBalances";
 import { formatDateSafely } from "@/lib/utils";
+import { useMemo } from "react";
 
 export const Groups = () => {
   const { user, walletAddress } = useWalletConnection();
   const { groups, loading, error, createGroup } = useGroups(user?.id);
+  
+  // Get group IDs for balance calculation
+  const groupIds = useMemo(() => groups.map(group => group.id), [groups]);
+  const { balances, loading: balancesLoading, getBalanceColor } = useGroupBalances(user?.id, groupIds);
 
   const handleGroupSubmit = async (data: { name: string; description?: string; userIds: string[] }) => {
     try {
       await createGroup(data);
     } catch (error) {
       console.error("Erro ao criar grupo:", error);
+    }
+  };
+
+  // Calculate stats from balances
+  const stats = useMemo(() => {
+    const totalGroups = groups.length;
+    const groupsOwing = Object.values(balances).filter(b => b.status === 'owe').length;
+    const groupsReceiving = Object.values(balances).filter(b => b.status === 'receive').length;
+    
+    return { totalGroups, groupsOwing, groupsReceiving };
+  }, [groups.length, balances]);
+
+  const getBorderColor = (groupId: string) => {
+    const balance = balances[groupId];
+    if (!balance) return 'border-gray-200';
+    
+    const color = getBalanceColor(balance);
+    switch (color) {
+      case 'green': return 'border-green-500';
+      case 'red': return 'border-red-500';
+      case 'gray': return 'border-gray-400';
+      default: return 'border-gray-200';
+    }
+  };
+
+  const getBalanceText = (groupId: string) => {
+    const balance = balances[groupId];
+    if (!balance) return null;
+    
+    if (balance.status === 'settled') return 'Balanceado';
+    if (balance.status === 'receive') return `Você recebe: ${balance.balance.toFixed(2)} TON`;
+    return `Você deve: ${Math.abs(balance.balance).toFixed(2)} TON`;
+  };
+
+  const getBalanceBadgeVariant = (groupId: string) => {
+    const balance = balances[groupId];
+    if (!balance) return 'secondary';
+    
+    switch (balance.status) {
+      case 'receive': return 'default';
+      case 'owe': return 'destructive';
+      case 'settled': return 'secondary';
+      default: return 'secondary';
     }
   };
 
@@ -53,21 +102,21 @@ export const Groups = () => {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
             <Card className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{groups.length}</div>
+              <div className="text-2xl font-bold text-primary">{stats.totalGroups}</div>
               <div className="text-xs text-muted-foreground">Grupos</div>
             </Card>
             <Card className="p-4 text-center">
-              <div className="text-2xl font-bold text-success">0</div>
-              <div className="text-xs text-muted-foreground">Receber</div>
+              <div className="text-2xl font-bold text-green-600">{stats.groupsReceiving}</div>
+              <div className="text-xs text-muted-foreground">Recebendo</div>
             </Card>
             <Card className="p-4 text-center">
-              <div className="text-2xl font-bold text-destructive">0</div>
+              <div className="text-2xl font-bold text-red-600">{stats.groupsOwing}</div>
               <div className="text-xs text-muted-foreground">Devendo</div>
             </Card>
           </div>
 
           {/* Loading State */}
-          {loading && (
+          {(loading || balancesLoading) && (
             <Card className="p-8 text-center">
               <Loader2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-spin" />
               <h3 className="font-semibold mb-2">Carregando grupos...</h3>
@@ -95,7 +144,10 @@ export const Groups = () => {
             <div className="space-y-4">
               <h3 className="font-semibold">Seus Grupos</h3>
               {groups.map((group) => (
-                <Card key={group.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                  key={group.id} 
+                  className={`p-4 hover:shadow-md transition-shadow cursor-pointer border-2 ${getBorderColor(group.id)}`}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -123,19 +175,25 @@ export const Groups = () => {
                       </div>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right space-y-2">
                       <Badge variant="outline" className="text-xs">
                         {group.inviteCode}
                       </Badge>
-                      {/* 🚀 SETTLEMENT BUTTON POR GRUPO */}
-                      <div className="mt-2">
-                        <SettlementButton 
-                          groupId={group.id}
-                          groupName={group.name}
-                          onSettlementComplete={() => window.location.reload()}
-                          className="h-8 px-3 text-xs"
-                        />
-                      </div>
+                      
+                      {balances[group.id] && (
+                        <div className="space-y-1">
+                          <Badge 
+                            variant={getBalanceBadgeVariant(group.id) as any}
+                            className="text-xs"
+                          >
+                            {balances[group.id].status === 'settled' ? 'BALANCEADO' : 
+                             balances[group.id].status === 'receive' ? 'RECEBENDO' : 'DEVENDO'}
+                          </Badge>
+                          <div className="text-xs text-muted-foreground">
+                            {getBalanceText(group.id)}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>

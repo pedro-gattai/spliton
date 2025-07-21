@@ -102,4 +102,35 @@ export class GroupController {
       );
     }
   }
+
+  /**
+   * GET /group/:groupId/balance/:userId
+   * Calcula o balanço de um usuário em um grupo específico
+   */
+  @Get(':groupId/balance/:userId')
+  async getGroupBalance(
+    @Param('groupId') groupId: string,
+    @Param('userId') userId: string,
+  ) {
+    try {
+      this.logger.log(
+        `Calculando balanço do usuário ${userId} no grupo ${groupId}`,
+      );
+      const balance = await this.groupService.getGroupBalance(groupId, userId);
+      return {
+        success: true,
+        data: balance,
+        message: 'Balanço calculado com sucesso',
+      };
+    } catch (error) {
+      this.logger.error(`Erro na rota getGroupBalance: ${error.message}`);
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

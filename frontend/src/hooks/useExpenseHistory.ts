@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { apiService, type Expense } from '@/lib/api';
+import { apiService, type ExpenseHistory } from '@/lib/api';
 
-export type ExpenseHistoryItem = Expense;
+export interface ExpenseHistoryOptions {
+  limit?: number;
+  offset?: number;
+  status?: 'all' | 'paid' | 'unpaid';
+}
 
 export interface ExpenseStats {
   total: number;
@@ -10,8 +14,11 @@ export interface ExpenseStats {
   pending: number;
 }
 
-export const useExpenseHistory = (userId?: string) => {
-  const [expenses, setExpenses] = useState<ExpenseHistoryItem[]>([]);
+export const useExpenseHistory = (
+  userId?: string,
+  options: ExpenseHistoryOptions = {},
+) => {
+  const [expenses, setExpenses] = useState<ExpenseHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ExpenseStats>({
@@ -28,7 +35,7 @@ export const useExpenseHistory = (userId?: string) => {
     setError(null);
 
     try {
-      const response = await apiService.getExpensesByUser(userId);
+      const response = await apiService.getExpenseHistory(userId, options);
       setExpenses(response || []);
       
       // Calcular estatísticas
@@ -41,33 +48,19 @@ export const useExpenseHistory = (userId?: string) => {
     }
   };
 
-  const calculateStats = (expenseList: ExpenseHistoryItem[]) => {
+  const calculateStats = (expenseList: ExpenseHistory[]) => {
     let total = 0;
     let paid = 0;
     let received = 0;
     let pending = 0;
 
     expenseList.forEach(expense => {
-      const userParticipant = expense.participants.find(p => p.userId === userId);
+      total += expense.userAmountOwed;
       
-      if (expense.payer.id === userId) {
-        // Usuário pagou esta despesa
-        total += expense.amount;
-        paid += expense.amount;
-        
-        // Verificar se todos os participantes pagaram
-        const allSettled = expense.participants.every(p => p.isSettled);
-        if (!allSettled) {
-          pending += expense.amount;
-        }
-      } else if (userParticipant) {
-        // Usuário deve dinheiro nesta despesa
-        total += userParticipant.amountOwed;
-        received += userParticipant.amountOwed;
-        
-        if (!userParticipant.isSettled) {
-          pending += userParticipant.amountOwed;
-        }
+      if (expense.isSettled) {
+        paid += expense.userAmountOwed;
+      } else {
+        pending += expense.userAmountOwed;
       }
     });
 
@@ -79,20 +72,9 @@ export const useExpenseHistory = (userId?: string) => {
     });
   };
 
-  const markAsSettled = async (expenseId: string, participantId: string) => {
-    try {
-      await apiService.updateExpenseParticipant(expenseId, participantId, { isSettled: true });
-      // Recarregar dados
-      await fetchExpenses();
-    } catch (err) {
-      console.error('Erro ao marcar como pago:', err);
-      throw err;
-    }
-  };
-
   useEffect(() => {
     fetchExpenses();
-  }, [userId]);
+  }, [userId, options.limit, options.offset, options.status]);
 
   return {
     expenses,
@@ -100,6 +82,5 @@ export const useExpenseHistory = (userId?: string) => {
     error,
     stats,
     refetch: fetchExpenses,
-    markAsSettled,
   };
 }; 

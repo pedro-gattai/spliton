@@ -17,7 +17,7 @@ for i in {1..3}; do
         echo "✅ Banco de dados disponível!"
         break
     fi
-    echo "⏳ Tentativa $i/30 - Aguardando banco..."
+    echo "⏳ Tentativa $i/3 - Aguardando banco..."
     sleep 5
 done
 
