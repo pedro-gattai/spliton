@@ -12,8 +12,7 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  Activity,
-  Percent
+  Activity
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -46,10 +45,7 @@ export const History = () => {
     return <Activity className="w-4 h-4 text-gray-500" />;
   };
 
-  const getSettledPercentage = () => {
-    if (!userStats || userStats.totalExpenses === 0) return 0;
-    return Math.round((userStats.settledExpenses / userStats.totalExpenses) * 100);
-  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,11 +97,11 @@ export const History = () => {
               
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs text-muted-foreground">Liquidado</div>
-                  <Percent className="w-4 h-4 text-purple-500" />
+                  <div className="text-xs text-muted-foreground">Você Deve</div>
+                  <TrendingDown className="w-4 h-4 text-red-500" />
                 </div>
-                <div className="text-lg font-bold text-purple-600">
-                  {getSettledPercentage()}%
+                <div className="text-lg font-bold text-red-600">
+                  {userStats.totalOwed.toFixed(2)} TON
                 </div>
               </Card>
             </div>

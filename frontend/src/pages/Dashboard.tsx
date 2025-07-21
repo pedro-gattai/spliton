@@ -19,6 +19,8 @@ import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { useGroups } from "@/hooks/useGroups";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useUserStats } from "@/hooks/useUserStats";
+import { useGroupBalances } from "@/hooks/useGroupBalances";
 
 // Types for form data
 type ExpenseFormData = {
@@ -73,6 +75,13 @@ export const Dashboard = () => {
 
   const { groups, createGroup } = useGroups(user?.id);
   const { createExpense } = useExpenses();
+
+  // Hooks para buscar dados de estatísticas e balanços
+  const { stats: userStats, loading: statsLoading } = useUserStats(user?.id);
+  
+  // Para balances dos grupos
+  const groupIds = groups.map(group => group.id);
+  const { balances, loading: balancesLoading } = useGroupBalances(user?.id, groupIds);
 
   const handleExpenseSubmit = async (data: any) => {
     try {
@@ -169,7 +178,9 @@ export const Dashboard = () => {
                   <TrendingUp className="w-4 h-4 mr-2 text-success" />
                   <span className="text-sm text-muted-foreground">Você recebe</span>
                 </div>
-                <div className="text-lg font-semibold text-success">0.00 TON</div>
+                <div className="text-lg font-semibold text-success">
+                  {statsLoading ? 'Carregando...' : userStats ? `${userStats.totalToReceive.toFixed(2)} TON` : '0.00 TON'}
+                </div>
               </Card>
 
               <Card className="p-4">
@@ -177,7 +188,9 @@ export const Dashboard = () => {
                   <TrendingDown className="w-4 h-4 mr-2 text-destructive" />
                   <span className="text-sm text-muted-foreground">Você deve</span>
                 </div>
-                <div className="text-lg font-semibold text-destructive">0.00 TON</div>
+                <div className="text-lg font-semibold text-destructive">
+                  {statsLoading ? 'Carregando...' : userStats ? `${userStats.totalOwed.toFixed(2)} TON` : '0.00 TON'}
+                </div>
               </Card>
             </div>
           </div>
