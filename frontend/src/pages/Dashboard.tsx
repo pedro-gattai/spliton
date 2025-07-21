@@ -14,6 +14,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewExpenseModal } from "@/components/modals/NewExpenseModal";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal";
+import { SettlementButton } from "@/components/SettlementButton";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
@@ -117,14 +118,14 @@ export const Dashboard = () => {
                   <DollarSign className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">Saldo da Carteira</span>
                 </div>
-                              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                )}
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
-                </Badge>
-              </div>
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  )}
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
+                  </Badge>
+                </div>
               </div>
               
               {!connected ? (
@@ -181,7 +182,17 @@ export const Dashboard = () => {
               </Card>
             </div>
           </div>
-
+          {/* Settlement Button */}
+              <div className="col-span-2">
+                <SettlementButton 
+                  onSettlementComplete={() => {
+                    refetch();
+                    // Refetch groups and expenses after settlement
+                    window.location.reload();
+                  }}
+                  className="w-full h-16 text-lg"
+                />
+              </div>
           {/* Grupos */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Seus Grupos</h2>
