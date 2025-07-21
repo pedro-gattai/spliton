@@ -14,6 +14,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewExpenseModal } from "@/components/modals/NewExpenseModal";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal";
+import { SettlementButton } from "@/components/SettlementButton";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
@@ -181,7 +182,17 @@ export const Dashboard = () => {
               </Card>
             </div>
           </div>
-
+          {/* 🚀 SETTLEMENT BUTTON - Resolver Todas as Dívidas */}
+              <div className="col-span-2">
+                <SettlementButton 
+                  onSettlementComplete={() => {
+                    refetch();
+                    // Refetch groups and expenses after settlement
+                    window.location.reload();
+                  }}
+                  className="w-full h-16 text-lg"
+                />
+              </div>
           {/* Grupos */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Seus Grupos</h2>

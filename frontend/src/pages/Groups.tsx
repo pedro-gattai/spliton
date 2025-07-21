@@ -5,6 +5,7 @@ import { Users, Plus, Search, Filter, Loader2, Calendar, User } from "lucide-rea
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
+import { SettlementButton } from "@/components/SettlementButton";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { formatDateSafely } from "@/lib/utils";
@@ -126,6 +127,15 @@ export const Groups = () => {
                       <Badge variant="outline" className="text-xs">
                         {group.inviteCode}
                       </Badge>
+                      {/* 🚀 SETTLEMENT BUTTON POR GRUPO */}
+                      <div className="mt-2">
+                        <SettlementButton 
+                          groupId={group.id}
+                          groupName={group.name}
+                          onSettlementComplete={() => window.location.reload()}
+                          className="h-8 px-3 text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
                 </Card>
