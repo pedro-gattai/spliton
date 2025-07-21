@@ -43,7 +43,7 @@ export const useSettlements = ({
     setError(null);
 
     try {
-      const url = `/api/debts/calculate${groupId ? `?groupId=${groupId}` : ''}`;
+      const url = `/api/payments/calculate${groupId ? `?groupId=${groupId}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) {
