@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,6 +33,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserSearch } from "@/hooks/useUserSearch";
 import { UserSearchResultItem } from "@/components/UserSearchResult";
 import { type UserSearchResult } from "@/lib/api";
+import { useWalletConnection } from "@/hooks/useWalletConnection";
+import { useGroups } from "@/hooks/useGroups";
+import { useGroupBalances } from "@/hooks/useGroupBalances";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome muito longo"),
@@ -69,10 +72,21 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   const [searchIdentifier, setSearchIdentifier] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useWalletConnection();
+  const { groups, loading: loadingGroups } = useGroups(user?.id);
+  
+  // Stabilize array reference to prevent unnecessary re-renders
+  const selectedGroupIds = useMemo(() => 
+    selectedGroup ? [selectedGroup.id] : [], 
+    [selectedGroup?.id]
+  );
+  
+  const { balances } = useGroupBalances(user?.id, selectedGroupIds);
   const { toast } = useToast();
 
-  const { user: searchResult, isSearching, error: searchError, clearSearch } = useUserSearch(searchIdentifier);
+  const { user: searchResult, isSearching, error: searchError, hasSearched, clearSearch } = useUserSearch(searchIdentifier);
 
   const form = useForm<GroupFormData>({
     resolver: zodResolver(groupSchema),
@@ -94,10 +108,19 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     }
   }, [open]);
 
-  // Show search results when typing
+  // Show search results when typing - CORRIGIDO
   useEffect(() => {
-    setShowSearchResults(searchIdentifier.length >= 3 && !isSearching);
-  }, [searchIdentifier, isSearching]);
+    const shouldShow = searchIdentifier.length >= 3 && (isSearching || hasSearched);
+    setShowSearchResults(shouldShow);
+  }, [searchIdentifier, isSearching, hasSearched, searchResult]);
+
+  // Validação de input melhorada
+  const isValidInput = (input: string) => {
+    const clean = input.trim();
+    if (clean.startsWith('@')) return clean.length >= 4;
+    if (clean.startsWith('EQ') || clean.startsWith('UQ')) return clean.length >= 20;
+    return clean.length >= 3;
+  };
 
   const handleSubmit = async (data: GroupFormData) => {
     if (!userId) {
@@ -194,11 +217,11 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     return <Search className="w-4 h-4 text-muted-foreground" />;
   };
 
+  // Placeholder dinâmico melhorado
   const getPlaceholder = () => {
-    if (searchIdentifier.startsWith('@')) {
-      return "Digite o username (ex: joao123)";
-    }
-    return "Digite @username ou endereço da carteira";
+    if (searchIdentifier.startsWith('@')) return "Digite o username (ex: @joao123)";
+    if (searchIdentifier.includes('EQ') || searchIdentifier.includes('UQ')) return "Endereço TON detectado...";
+    return "Digite @username ou endereço da carteira TON";
   };
 
   const getFullName = (member: any) => {
@@ -339,7 +362,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
                   </p>
                 )}
 
-                {/* Resultados da busca */}
+                {/* Resultados da busca - CORRIGIDO */}
                 {showSearchResults && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
                     {isSearching ? (
@@ -358,11 +381,11 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
                           onSelect={addMember}
                         />
                       </div>
-                    ) : (
+                    ) : hasSearched ? (
                       <div className="p-4 text-center">
                         <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>

@@ -105,39 +105,74 @@ export class UserService {
    */
   async searchUser(identifier: string): Promise<UserResponse | null> {
     try {
-      this.logger.log(`Buscando usuário por identificador: ${identifier}`);
+      this.logger.log(`🔍 Buscando usuário por identificador: "${identifier}"`);
 
-      // Limpar e validar o identificador
       const cleanIdentifier = identifier.trim();
+      if (!cleanIdentifier) return null;
 
-      if (!cleanIdentifier) {
+      let user: any = null;
+
+      // BUSCAR por username primeiro (case insensitive):
+      if (cleanIdentifier.startsWith('@')) {
+        const usernameQuery = cleanIdentifier.substring(1).toLowerCase();
+        this.logger.log(`🔍 Buscando por username: "${usernameQuery}"`);
+
+        user = await this.prisma.user.findFirst({
+          where: {
+            username: {
+              equals: usernameQuery,
+              mode: 'insensitive',
+            },
+          },
+        });
+      } else {
+        // Tentar username sem @:
+        this.logger.log(`🔍 Tentando username sem @: "${cleanIdentifier}"`);
+
+        user = await this.prisma.user.findFirst({
+          where: {
+            username: {
+              equals: cleanIdentifier.toLowerCase(),
+              mode: 'insensitive',
+            },
+          },
+        });
+
+        // Se não encontrou, tentar por carteira:
+        if (
+          !user &&
+          (cleanIdentifier.startsWith('EQ') ||
+            cleanIdentifier.startsWith('UQ') ||
+            cleanIdentifier.length > 30)
+        ) {
+          this.logger.log(
+            `🔍 Tentando por endereço de carteira: "${cleanIdentifier}"`,
+          );
+
+          user = await this.prisma.user.findFirst({
+            where: {
+              tonWalletAddress: {
+                equals: cleanIdentifier,
+                mode: 'insensitive',
+              },
+            },
+          });
+        }
+      }
+
+      if (!user) {
+        this.logger.log(
+          `❌ Nenhum usuário encontrado para: "${cleanIdentifier}"`,
+        );
         return null;
       }
 
-      // Tentar encontrar por username primeiro (case insensitive, remover @ se presente)
-      const usernameQuery = cleanIdentifier.startsWith('@')
-        ? cleanIdentifier.substring(1)
-        : cleanIdentifier;
-
-      let user = await this.prisma.user.findFirst({
-        where: {
-          username: {
-            equals: usernameQuery,
-            mode: 'insensitive',
-          },
-        },
-      });
-
-      // Se não encontrado por username, tentar por endereço da carteira
-      if (!user) {
-        user = await this.prisma.user.findFirst({
-          where: { tonWalletAddress: cleanIdentifier },
-        });
-      }
-
-      return user ? this.mapUserToResponse(user) : null;
+      this.logger.log(
+        `✅ Usuário encontrado: ${user.firstName} (${user.username || user.tonWalletAddress})`,
+      );
+      return this.mapUserToResponse(user);
     } catch (error) {
-      this.logger.error(`Erro ao buscar usuário: ${error.message}`);
+      this.logger.error(`❌ Erro ao buscar usuário: ${error.message}`);
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
     }
   }
