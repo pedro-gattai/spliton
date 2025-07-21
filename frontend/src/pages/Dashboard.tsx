@@ -118,14 +118,14 @@ export const Dashboard = () => {
                   <DollarSign className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">Saldo da Carteira</span>
                 </div>
-                              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                )}
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
-                </Badge>
-              </div>
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  )}
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
+                  </Badge>
+                </div>
               </div>
               
               {!connected ? (
@@ -182,7 +182,7 @@ export const Dashboard = () => {
               </Card>
             </div>
           </div>
-          {/* 🚀 SETTLEMENT BUTTON - Resolver Todas as Dívidas */}
+          {/* Settlement Button */}
               <div className="col-span-2">
                 <SettlementButton 
                   onSettlementComplete={() => {
