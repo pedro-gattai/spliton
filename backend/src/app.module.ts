@@ -7,6 +7,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { UserModule } from './user/user.module';
 import { GroupModule } from './group/group.module';
+import { PaymentsModule } from './payments/payments.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -19,6 +20,7 @@ import { HealthController } from './health/health.controller';
     ExpensesModule,
     UserModule,
     GroupModule,
+    PaymentsModule,
   ],
 
   controllers: [AppController, HealthController],
