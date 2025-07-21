@@ -6,25 +6,32 @@ export const useUserSearch = (identifier: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const searchUser = useCallback(async (searchIdentifier: string) => {
     if (!searchIdentifier || searchIdentifier.length < 3) {
       setUser(null);
       setError(null);
       setIsSearching(false);
+      setHasSearched(false);
       return;
     }
 
     setIsSearching(true);
     setError(null);
+    setHasSearched(false);
 
     try {
+      console.log(`🔍 Buscando usuário por: "${searchIdentifier}"`);
       const result = await apiService.searchUser(searchIdentifier);
       setUser(result);
+      setHasSearched(true);
+      console.log('📊 Resultado da busca:', result);
     } catch (err) {
-      console.error('Erro ao buscar usuário:', err);
+      console.error('❌ Erro ao buscar usuário:', err);
       setError('Erro ao buscar usuário');
       setUser(null);
+      setHasSearched(true);
     } finally {
       setIsSearching(false);
     }
@@ -33,7 +40,7 @@ export const useUserSearch = (identifier: string) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchUser(identifier);
-    }, 500); // 500ms debounce
+    }, 300); // Reduzido de 500ms para 300ms
 
     return () => clearTimeout(timeoutId);
   }, [identifier, searchUser]);
@@ -42,6 +49,7 @@ export const useUserSearch = (identifier: string) => {
     setUser(null);
     setError(null);
     setIsSearching(false);
+    setHasSearched(false);
   }, []);
 
   return {
@@ -49,6 +57,7 @@ export const useUserSearch = (identifier: string) => {
     isLoading,
     error,
     isSearching,
+    hasSearched,
     clearSearch,
   };
 }; 

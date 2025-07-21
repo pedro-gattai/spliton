@@ -163,6 +163,16 @@ class ApiService {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Tratar 404 em search como sucesso com data null
+      if (response.status === 404 && endpoint.includes('/search/')) {
+        return {
+          success: true,
+          data: null as T,
+          message: 'Usuário não encontrado'
+        };
+      }
+      
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
@@ -314,8 +324,30 @@ class ApiService {
 
   // User Search APIs
   async searchUser(identifier: string): Promise<UserSearchResult | null> {
-    const response = await this.request<UserSearchResult>(`/user/search/${encodeURIComponent(identifier)}`);
-    return response.data;
+    try {
+      const cleanIdentifier = identifier.trim();
+      console.log(`🔍 API: Buscando usuário por "${cleanIdentifier}"`);
+      
+      const encodedIdentifier = encodeURIComponent(cleanIdentifier);
+      const response = await this.request<UserSearchResult>(`/user/search/${encodedIdentifier}`);
+      
+      console.log('📊 API: Resposta recebida:', response);
+      
+      if (response && response.data !== undefined) {
+        return response.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ API: Erro na busca:', error);
+      
+      // Se é 404, retornar null (usuário não encontrado)
+      if (error instanceof Error && error.message.includes('404')) {
+        return null;
+      }
+      
+      throw error;
+    }
   }
 }
 
