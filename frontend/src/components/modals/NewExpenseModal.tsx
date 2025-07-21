@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -94,7 +94,14 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   
   const { user } = useWalletConnection();
   const { groups, loading: loadingGroups } = useGroups(user?.id);
-  const { balances } = useGroupBalances(user?.id, selectedGroup ? [selectedGroup.id] : []);
+  
+  // Stabilize array reference to prevent unnecessary re-renders
+  const selectedGroupIds = useMemo(() => 
+    selectedGroup ? [selectedGroup.id] : [], 
+    [selectedGroup?.id]
+  );
+  
+  const { balances } = useGroupBalances(user?.id, selectedGroupIds);
   const { toast } = useToast();
 
   const form = useForm<ExpenseFormData>({
@@ -116,7 +123,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const watchedSplitType = form.watch("splitType");
   const watchedDescription = form.watch("description");
 
-  // Cálculo automático em tempo real
+  // Cálculo automático em tempo real - usando setTimeout para quebrar o loop
   const calculateSplit = useCallback((amount: number, participants: any[], splitType: string) => {
     if (splitType === 'EQUAL' && participants.length > 0) {
       const amountPerPerson = amount / participants.length;
@@ -124,17 +131,22 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
         ...p,
         amountOwed: amountPerPerson.toFixed(2)
       }));
-      form.setValue("participants", updatedParticipants);
+      
+      // Use setTimeout to break the render loop
+      setTimeout(() => {
+        form.setValue("participants", updatedParticipants);
+      }, 0);
     }
   }, [form]);
 
   // Executar cálculo quando mudar valor, participantes ou tipo de divisão
+  // Removed calculateSplit from dependencies to break the loop
   useEffect(() => {
     const amount = Number(watchedAmount);
     if (amount > 0 && watchedParticipants.length > 0) {
       calculateSplit(amount, watchedParticipants, watchedSplitType);
     }
-  }, [watchedAmount, watchedParticipants.length, watchedSplitType, calculateSplit]);
+  }, [watchedAmount, watchedParticipants.length, watchedSplitType]); // Removed calculateSplit
 
   // Validação da soma em tempo real
   useEffect(() => {
@@ -263,6 +275,10 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
 
   const handleGroupChange = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
+    
+    // Add change detection to avoid redundant updates
+    if (selectedGroup?.id === groupId) return;
+    
     setSelectedGroup(group || null);
     form.setValue("groupId", groupId);
     

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '@/lib/api';
 
 export interface GroupBalance {
@@ -17,21 +17,35 @@ export const useGroupBalances = (userId?: string, groupIds?: string[]) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBalances = async () => {
-    if (!userId || !groupIds || groupIds.length === 0) return;
+  // Memoize groupIds to prevent unnecessary re-renders
+  const stableGroupIds = useMemo(() => {
+    if (!groupIds || groupIds.length === 0) return [];
+    return [...groupIds].sort(); // Sort to ensure stable reference
+  }, [groupIds]);
+
+  // Create a stable key for dependency tracking
+  const dependencyKey = useMemo(() => {
+    return `${userId}-${stableGroupIds.join(',')}`;
+  }, [userId, stableGroupIds]);
+
+  const fetchBalances = useCallback(async () => {
+    if (!userId || !stableGroupIds || stableGroupIds.length === 0) {
+      setBalances({});
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const balancePromises = groupIds.map(groupId =>
+      const balancePromises = stableGroupIds.map(groupId =>
         apiService.getGroupBalance(groupId, userId)
       );
       
       const balanceResults = await Promise.all(balancePromises);
       
       const balancesMap: GroupBalancesMap = {};
-      groupIds.forEach((groupId, index) => {
+      stableGroupIds.forEach((groupId, index) => {
         balancesMap[groupId] = balanceResults[index];
       });
       
@@ -42,17 +56,17 @@ export const useGroupBalances = (userId?: string, groupIds?: string[]) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, stableGroupIds]);
 
   useEffect(() => {
     fetchBalances();
-  }, [userId, groupIds]);
+  }, [dependencyKey]); // Use dependencyKey instead of individual dependencies
 
-  const getBalanceColor = (balance: GroupBalance) => {
+  const getBalanceColor = useCallback((balance: GroupBalance) => {
     if (balance.status === 'settled') return 'gray';
     if (balance.status === 'receive') return 'green';
     return 'red';
-  };
+  }, []);
 
   return {
     balances,
