@@ -146,4 +146,66 @@ export class UserController {
       );
     }
   }
+
+  /**
+   * GET /user/:userId/stats
+   * Retorna estatísticas do usuário
+   */
+  @Get(':userId/stats')
+  async getUserStats(@Param('userId') userId: string) {
+    try {
+      this.logger.log(`Buscando estatísticas do usuário: ${userId}`);
+      const stats = await this.userService.getUserStats(userId);
+      return {
+        success: true,
+        data: stats,
+        message: 'Estatísticas do usuário recuperadas com sucesso',
+      };
+    } catch (error) {
+      this.logger.error(`Erro na rota getUserStats: ${error.message}`);
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * GET /user/search/:identifier
+   * Busca um usuário por username ou endereço da carteira
+   */
+  @Get('search/:identifier')
+  async searchUser(@Param('identifier') identifier: string) {
+    try {
+      this.logger.log(`🔍 Controller: Buscando usuário por: "${identifier}"`);
+
+      // DECODIFICAR parâmetro URL:
+      const decodedIdentifier = decodeURIComponent(identifier);
+
+      const user = await this.userService.searchUser(decodedIdentifier);
+
+      // SEMPRE retornar success: true, mesmo quando não encontra:
+      return {
+        success: true,
+        data: user, // pode ser null
+        message: user ? 'Usuário encontrado' : 'Usuário não encontrado',
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Controller: Erro na rota searchUser: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Erro interno do servidor',
+          details: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

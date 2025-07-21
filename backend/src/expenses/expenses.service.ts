@@ -2,6 +2,25 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 
+export interface ExpenseHistory {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  userAmountOwed: number;
+  isSettled: boolean;
+  settledAt: string | null;
+  createdAt: string;
+  group: { id: string; name: string };
+  payer: { firstName: string; lastName: string };
+}
+
+export interface ExpenseHistoryOptions {
+  limit?: number;
+  offset?: number;
+  status?: 'all' | 'paid' | 'unpaid';
+}
+
 @Injectable()
 export class ExpensesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -224,20 +243,101 @@ export class ExpensesService {
   }
 
   async deleteExpense(id: string) {
-    // Check if expense exists
-    const existingExpense = await this.prisma.expense.findUnique({
+    const expense = await this.prisma.expense.findUnique({
       where: { id },
     });
 
-    if (!existingExpense) {
+    if (!expense) {
       throw new NotFoundException(`Expense with ID ${id} not found`);
     }
 
-    // Delete the expense (participants will be deleted automatically due to cascade)
     await this.prisma.expense.delete({
       where: { id },
     });
 
     return { message: 'Expense deleted successfully' };
+  }
+
+  /**
+   * Retorna histórico de despesas de um usuário
+   */
+  async getExpenseHistory(
+    userId: string,
+    options: ExpenseHistoryOptions = {},
+  ): Promise<ExpenseHistory[]> {
+    const { limit, offset, status = 'all' } = options;
+
+    // Construir filtros baseados no status
+    let statusFilter = {};
+    if (status === 'paid') {
+      statusFilter = { isSettled: true };
+    } else if (status === 'unpaid') {
+      statusFilter = { isSettled: false };
+    }
+
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        OR: [
+          { payerId: userId },
+          {
+            participants: {
+              some: {
+                userId,
+                ...statusFilter,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        payer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        participants: {
+          where: { userId },
+          select: {
+            amountOwed: true,
+            isSettled: true,
+            settledAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    return expenses.map(expense => {
+      const userParticipation = expense.participants[0];
+      return {
+        id: expense.id,
+        description: expense.description || '',
+        amount: expense.amount,
+        category: expense.category || '',
+        userAmountOwed: userParticipation?.amountOwed || 0,
+        isSettled: userParticipation?.isSettled || false,
+        settledAt: userParticipation?.settledAt?.toISOString() || null,
+        createdAt: expense.createdAt.toISOString(),
+        group: {
+          id: expense.group.id,
+          name: expense.group.name,
+        },
+        payer: {
+          firstName: expense.payer.firstName,
+          lastName: expense.payer.lastName || '',
+        },
+      };
+    });
   }
 }

@@ -20,6 +20,15 @@ export interface UserResponse {
   updatedAt: Date;
 }
 
+export interface UserStats {
+  totalExpenses: number;
+  totalSpent: number;
+  totalOwed: number;
+  totalToReceive: number;
+  groupsCount: number;
+  settledExpenses: number;
+}
+
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
@@ -92,6 +101,83 @@ export class UserService {
   }
 
   /**
+   * Busca um usuário por username ou endereço da carteira
+   */
+  async searchUser(identifier: string): Promise<UserResponse | null> {
+    try {
+      this.logger.log(`🔍 Buscando usuário por identificador: "${identifier}"`);
+
+      const cleanIdentifier = identifier.trim();
+      if (!cleanIdentifier) return null;
+
+      let user: any = null;
+
+      // BUSCAR por username primeiro (case insensitive):
+      if (cleanIdentifier.startsWith('@')) {
+        const usernameQuery = cleanIdentifier.substring(1).toLowerCase();
+        this.logger.log(`🔍 Buscando por username: "${usernameQuery}"`);
+
+        user = await this.prisma.user.findFirst({
+          where: {
+            username: {
+              equals: usernameQuery,
+              mode: 'insensitive',
+            },
+          },
+        });
+      } else {
+        // Tentar username sem @:
+        this.logger.log(`🔍 Tentando username sem @: "${cleanIdentifier}"`);
+
+        user = await this.prisma.user.findFirst({
+          where: {
+            username: {
+              equals: cleanIdentifier.toLowerCase(),
+              mode: 'insensitive',
+            },
+          },
+        });
+
+        // Se não encontrou, tentar por carteira:
+        if (
+          !user &&
+          (cleanIdentifier.startsWith('EQ') ||
+            cleanIdentifier.startsWith('UQ') ||
+            cleanIdentifier.length > 30)
+        ) {
+          this.logger.log(
+            `🔍 Tentando por endereço de carteira: "${cleanIdentifier}"`,
+          );
+
+          user = await this.prisma.user.findFirst({
+            where: {
+              tonWalletAddress: {
+                equals: cleanIdentifier,
+                mode: 'insensitive',
+              },
+            },
+          });
+        }
+      }
+
+      if (!user) {
+        this.logger.log(
+          `❌ Nenhum usuário encontrado para: "${cleanIdentifier}"`,
+        );
+        return null;
+      }
+
+      this.logger.log(
+        `✅ Usuário encontrado: ${user.firstName} (${user.username || user.tonWalletAddress})`,
+      );
+      return this.mapUserToResponse(user);
+    } catch (error) {
+      this.logger.error(`❌ Erro ao buscar usuário: ${error.message}`);
+      throw new Error(`Falha ao buscar usuário: ${error.message}`);
+    }
+  }
+
+  /**
    * Busca um usuário pelo ID
    */
   async findById(id: string): Promise<UserResponse | null> {
@@ -150,5 +236,86 @@ export class UserService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  /**
+   * Calcula estatísticas do usuário
+   */
+  async getUserStats(userId: string): Promise<UserStats> {
+    try {
+      this.logger.log(`Calculando estatísticas do usuário: ${userId}`);
+
+      // Verificar se o usuário existe
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Total de despesas criadas pelo usuário
+      const totalExpenses = await this.prisma.expense.count({
+        where: { payerId: userId },
+      });
+
+      // Total gasto pelo usuário (despesas que ele pagou)
+      const totalSpentResult = await this.prisma.expense.aggregate({
+        where: { payerId: userId },
+        _sum: { amount: true },
+      });
+      const totalSpent = Number(totalSpentResult._sum.amount || 0);
+
+      // Total que o usuário deve (participações em despesas não liquidadas)
+      const totalOwedResult = await this.prisma.expenseParticipant.aggregate({
+        where: {
+          userId,
+          isSettled: false,
+        },
+        _sum: { amountOwed: true },
+      });
+      const totalOwed = Number(totalOwedResult._sum?.amountOwed || 0);
+
+      // Total que o usuário deve receber (outros devem a ele)
+      const totalToReceiveResult =
+        await this.prisma.expenseParticipant.aggregate({
+          where: {
+            expense: {
+              payerId: userId,
+            },
+            userId: { not: userId },
+            isSettled: false,
+          },
+          _sum: { amountOwed: true },
+        });
+      const totalToReceive = Number(totalToReceiveResult._sum?.amountOwed || 0);
+
+      // Número de grupos que o usuário é membro
+      const groupsCount = await this.prisma.groupMember.count({
+        where: { userId },
+      });
+
+      // Número de despesas liquidadas
+      const settledExpenses = await this.prisma.expenseParticipant.count({
+        where: {
+          userId,
+          isSettled: true,
+        },
+      });
+
+      return {
+        totalExpenses,
+        totalSpent,
+        totalOwed,
+        totalToReceive,
+        groupsCount,
+        settledExpenses,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao calcular estatísticas do usuário: ${error.message}`,
+      );
+      throw new Error(`Falha ao calcular estatísticas: ${error.message}`);
+    }
   }
 }

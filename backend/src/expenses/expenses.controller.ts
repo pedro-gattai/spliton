@@ -68,4 +68,23 @@ export class ExpensesController {
   async deleteExpense(@Param('id') id: string) {
     return await this.expensesService.deleteExpense(id);
   }
+
+  /**
+   * GET /expenses/history/:userId
+   * Retorna histórico de despesas de um usuário
+   */
+  @Get('history/:userId')
+  async getExpenseHistory(
+    @Param('userId') userId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('status') status?: 'all' | 'paid' | 'unpaid',
+  ) {
+    const options = {
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+      status: status || 'all',
+    };
+    return await this.expensesService.getExpenseHistory(userId, options);
+  }
 }
