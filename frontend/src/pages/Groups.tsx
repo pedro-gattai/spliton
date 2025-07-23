@@ -5,6 +5,7 @@ import { Users, Plus, Search, Filter, Loader2, Calendar, User, TrendingUp, Trend
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
+import { SettlementButton } from "@/components/SettlementButton";
 import { useGroups } from "@/hooks/useGroups";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { useGroupBalances } from "@/hooks/useGroupBalances";
