@@ -176,7 +176,7 @@ export const useTonContract = () => {
           groupId
         });
 
-        const result = await tonConnectUI.sendTransaction(transaction);
+        const result = await tonConnectUI.sendTransaction(transaction) as { boc: string };
 
         console.log('✅ BatchSettlement executado com sucesso');
 
@@ -278,7 +278,7 @@ export const useTonContract = () => {
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Timeout: Transação demorou mais de 60s')), 60000)
           )
-        ]);
+        ]) as { boc: string };
 
         console.log('✅ DirectPayment TACT executado com sucesso!');
 

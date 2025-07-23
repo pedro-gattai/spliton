@@ -78,7 +78,7 @@ export const useSettlements = (
         from: user.id,
         to: debt.to,
         amount: debt.amount,
-        fromName: user.firstName || user.username || 'Você',
+        fromName: user.username || 'Você',
         toName: debt.toName,
         fromAddress: user.tonWalletAddress,
         toAddress: debt.toAddress,
