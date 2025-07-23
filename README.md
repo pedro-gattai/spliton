@@ -173,14 +173,20 @@ docker compose exec backend npx prisma studio
 
 ## 🌐 Deploy
 
-### **Railway (Backend + Banco)**
+### **Backend + Banco**
 O backend é deployado automaticamente no Railway quando há push para a branch `main`.
 
 **Configuração:**
 - **Arquivo**: `backend.toml`
 - **Dockerfile**: `backend/Dockerfile`
-- **Banco**: PostgreSQL automático
-- **URL**: Gerada automaticamente pelo Railway
+- **Banco**: PostgreSQL
+
+### **Telegram Bot**
+O bot do Telegram é deployado separadamente no Railway.
+
+**Configuração:**
+- **Arquivo**: `telegram-bot.toml`
+- **Dockerfile**: `telegramBot/Dockerfile`
 
 ### **Cloudflare Pages (Frontend)**
 O frontend é deployado automaticamente no Cloudflare Pages.
@@ -189,13 +195,6 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 - **Build Command**: `npm run build`
 - **Output Directory**: `dist`
 - **Framework**: Vite
-
-### **Telegram Bot**
-O bot do Telegram é deployado separadamente no Railway.
-
-**Configuração:**
-- **Arquivo**: `telegram-bot.toml`
-- **Dockerfile**: `telegramBot/Dockerfile`
 
 ## 🔧 Desenvolvimento
 
