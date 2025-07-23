@@ -151,14 +151,14 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   // Executar cálculo quando mudar valor, participantes, pagador ou tipo de divisão
   useEffect(() => {
     const amount = Number(watchedAmount);
-    if (amount > 0 && watchedParticipants.length > 0 && watchedPayerId) {
+    if (amount > 0 && watchedParticipants && watchedParticipants.length > 0 && watchedPayerId) {
       calculateSplit(amount, watchedParticipants, watchedSplitType);
     }
-  }, [watchedAmount, watchedParticipants.length, watchedSplitType, watchedPayerId, calculateSplit]);
+  }, [watchedAmount, watchedParticipants?.length, watchedSplitType, watchedPayerId, calculateSplit]);
 
   // Validação da soma em tempo real
   useEffect(() => {
-    if (watchedSplitType === 'CUSTOM' && watchedParticipants.length > 0) {
+    if (watchedSplitType === 'CUSTOM' && watchedParticipants && watchedParticipants.length > 0) {
       const amount = Number(watchedAmount);
       const totalOwed = watchedParticipants.reduce((sum, p) => sum + Number(p.amountOwed), 0);
       const difference = Math.abs(totalOwed - amount);
@@ -367,7 +367,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   };
 
   const getParticipantsWithNames = () => {
-    if (!selectedGroup) return [];
+    if (!selectedGroup || !watchedParticipants) return [];
     
     return watchedParticipants.map(p => {
       const member = selectedGroup.members.find((m: any) => m.user.id === p.userId);
@@ -568,11 +568,11 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                 {/* Seleção de Participantes */}
                 <ParticipantSelector
                   members={selectedGroup.members}
-                  selected={watchedParticipants}
+                  selected={watchedParticipants || []}
                   onToggle={toggleParticipant}
                   onAmountChange={updateParticipantAmount}
                   onAddExternalUser={handleAddExternalUser}
-                  splitType={watchedSplitType}
+                  splitType={watchedSplitType || 'EQUAL'}
                   showAvatars={true}
                   showBalance={true}
                   allowExternalUsers={true}
@@ -602,12 +602,12 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                 />
 
                 {/* Preview da Divisão */}
-                {Number(watchedAmount) > 0 && watchedParticipants.length > 0 && watchedPayerId && (
+                {Number(watchedAmount) > 0 && watchedParticipants && watchedParticipants.length > 0 && watchedPayerId && (
                   <DivisionPreview
                     amount={Number(watchedAmount)}
                     participants={getParticipantsWithNames()}
                     payer={getPayerName()}
-                    splitType={watchedSplitType}
+                    splitType={watchedSplitType || 'EQUAL'}
                     payerId={watchedPayerId}
                   />
                 )}

@@ -388,7 +388,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
               </div>
 
               {/* Lista de Membros */}
-              {watchedMembers.length > 0 && (
+              {watchedMembers && watchedMembers.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
                     Membros selecionados ({watchedMembers.length}):
@@ -449,7 +449,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
 
 
             {/* Resumo */}
-            {watchedMembers.length > 0 && (
+            {watchedMembers && watchedMembers.length > 0 && (
               <div className="p-3 bg-muted/50 rounded-lg space-y-1">
                 <p className="text-sm font-medium">Resumo:</p>
                 <p className="text-xs text-muted-foreground">
