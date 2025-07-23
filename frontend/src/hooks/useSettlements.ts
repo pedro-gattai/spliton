@@ -1,6 +1,6 @@
-// frontend/src/hooks/useSettlements.ts
 import { useState, useCallback } from 'react';
 import { useWalletConnection } from './useWalletConnection';
+import { useTonContract } from './useTonContract';
 
 interface Settlement {
   from: string;
@@ -35,6 +35,7 @@ export const useSettlements = (
   const [totalAmount, setTotalAmount] = useState(0);
 
   const { user, connected } = useWalletConnection();
+  const { executeDirectPayment } = useTonContract();
 
   // Calcular settlements (buscar dívidas do usuário)
   const calculateSettlements = useCallback(async (): Promise<boolean> => {
@@ -132,7 +133,7 @@ export const useSettlements = (
     setError(null);
 
     try {
-      console.log('🚀 Executando TODOS os pagamentos via backend:', settlements.length);
+      console.log('🚀 Executando TODOS os pagamentos via carteira:', settlements.length);
 
       let successfulPayments = 0;
       const participantIds: string[] = [];
@@ -141,19 +142,13 @@ export const useSettlements = (
         console.log(`💸 Pagando ${settlement.amount} TON para ${settlement.toName}`);
 
         try {
-          const response = await fetch('/api/payments/pay', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              toAddress: settlement.toAddress,
-              amount: settlement.amount,
-              groupId: groupId || undefined,
-              description: `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
-            })
-          });
+          // ✅ USAR A CARTEIRA CONECTADA EM VEZ DO BACKEND
+          const result = await executeDirectPayment(
+            settlement.toAddress!,
+            settlement.amount,
+            `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
+          );
 
-          const result = await response.json();
-          
           if (!result.success) {
             console.error(`❌ Falha no pagamento para ${settlement.toName}:`, result.error);
             continue;
@@ -207,7 +202,7 @@ export const useSettlements = (
     } finally {
       setIsExecuting(false);
     }
-  }, [connected, settlements, groupId, onError]);
+  }, [connected, settlements, executeDirectPayment, onError]);
 
   // Executar UMA dívida específica
   const executeIndividualSettlement = useCallback(async (settlement: Settlement): Promise<boolean> => {
@@ -231,18 +226,12 @@ export const useSettlements = (
     try {
       console.log(`💸 Pagando ${settlement.amount} TON para ${settlement.toName}`);
 
-      const response = await fetch('/api/payments/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          toAddress: settlement.toAddress,
-          amount: settlement.amount,
-          groupId: groupId || undefined,
-          description: `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
-        })
-      });
-
-      const result = await response.json();
+      // ✅ USAR A CARTEIRA CONECTADA EM VEZ DO BACKEND
+      const result = await executeDirectPayment(
+        settlement.toAddress!,
+        settlement.amount,
+        `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
+      );
       
       if (!result.success) {
         throw new Error(result.error || 'Falha no pagamento');
@@ -275,7 +264,7 @@ export const useSettlements = (
     } finally {
       setIsPayingIndividual(null);
     }
-  }, [connected, groupId, onError]);
+  }, [connected, executeDirectPayment, onError]);
 
   // Executar settlements usando a rota /payments/pay (DEPRECATED - manter para compatibilidade)
   const executeSettlements = useCallback(async (): Promise<boolean> => {
