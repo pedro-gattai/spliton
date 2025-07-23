@@ -51,5 +51,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando de inicialização com fallback (SEM SEED)
-CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy --skip-seed && node dist/src/main.js; fi"]
+# Comando de inicialização com fallback
+CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy && node dist/src/main.js; fi"]

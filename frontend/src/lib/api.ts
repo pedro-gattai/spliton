@@ -69,6 +69,16 @@ interface UserSearchResult {
   tonWalletAddress: string;
 }
 
+interface User {
+  id: string;
+  telegramId: string;
+  username: string;
+  email: string | null;
+  tonWalletAddress: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Group {
   id: string;
   name: string;
@@ -259,29 +269,29 @@ class ApiService {
     tonWalletAddress: string;
     username: string;
     email?: string;
-  }): Promise<any> {
-    const response = await this.request<any>('/user', {
+  }): Promise<User> {
+    const response = await this.request<User>('/user', {
       method: 'POST',
       body: JSON.stringify(data),
     });
     return response.data;
   }
 
-  async findUserByWalletAddress(walletAddress: string): Promise<any> {
-    const response = await this.request<any>(`/user/wallet/${walletAddress}`);
+  async findUserByWalletAddress(walletAddress: string): Promise<User | null> {
+    const response = await this.request<User>(`/user/wallet/${walletAddress}`);
     return response.data;
   }
 
-  async findUserById(id: string): Promise<any> {
-    const response = await this.request<any>(`/user/${id}`);
+  async findUserById(id: string): Promise<User | null> {
+    const response = await this.request<User>(`/user/${id}`);
     return response.data;
   }
 
   async updateUser(id: string, data: Partial<{
     email: string;
     username: string;
-  }>): Promise<any> {
-    const response = await this.request<any>(`/user/${id}`, {
+  }>): Promise<User> {
+    const response = await this.request<User>(`/user/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -404,5 +414,6 @@ export type {
   GroupBalance,
   ExpenseHistory,
   ExpenseHistoryOptions,
-  UserSearchResult
+  UserSearchResult,
+  User
 }; 

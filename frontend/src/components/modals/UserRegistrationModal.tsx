@@ -7,9 +7,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
-import { apiService } from "@/lib/api";
+import { apiService, type User } from "@/lib/api";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
-import { CheckCircle, XCircle, Loader2, User } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, User as UserIcon } from "lucide-react";
 
 const userRegistrationSchema = z.object({
   username: z.string()
@@ -30,7 +30,7 @@ interface UserRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   walletAddress: string;
-  onUserCreated: (user: { id: string; username: string; email?: string; tonWalletAddress: string }) => void;
+  onUserCreated: (user: User) => void;
 }
 
 export const UserRegistrationModal = ({
@@ -106,7 +106,7 @@ export const UserRegistrationModal = ({
             <Label htmlFor="username">Nome de usuário</Label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                <User className="w-4 h-4 text-muted-foreground" />
+                <UserIcon className="w-4 h-4 text-muted-foreground" />
               </div>
               <Input
                 id="username"

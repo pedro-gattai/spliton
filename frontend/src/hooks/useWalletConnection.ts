@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTonWallet } from '@tonconnect/ui-react';
-import { apiService } from '@/lib/api';
-
-interface User {
-  id: string;
-  tonWalletAddress: string;
-  firstName: string;
-  lastName?: string;
-  username?: string;
-  email?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { apiService, type User } from '@/lib/api';
 
 export const useWalletConnection = () => {
   const wallet = useTonWallet();
