@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -23,13 +24,20 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    nodePolyfills({
+      include: ['buffer', 'crypto', 'stream', 'util'],
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      buffer: 'buffer',
     },
+  },
+  define: {
+    global: 'globalThis',
   },
   build: {
     outDir: 'dist',
@@ -37,6 +45,7 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      external: [],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
@@ -70,6 +79,11 @@ export default defineConfig(({ mode }) => ({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
+    include: ['react', 'react-dom', 'react-router-dom', 'buffer'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
   }
 }));
