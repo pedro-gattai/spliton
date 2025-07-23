@@ -1,11 +1,42 @@
-# SplitOn
+# SplitOn {#spliton}
 **Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
+
+## 📋 Sumário
+
+- [🎯 Sobre o Projeto](#-sobre-o-projeto)
+- [📲 Como acessar o projeto](#-como-acessar-o-projeto)
+- [😀 Fluxo de uso](#-fluxo-de-uso)
+- [✨ Features Principais](#-features-principais)
+- [🏗️ Arquitetura do Projeto](#️-arquitetura-do-projeto)
+  - [Arquitetura do software](#arquitetura-do-software)
+  - [Stack Tecnológica](#stack-tecnológica)
+  - [Estrutura de Pastas](#estrutura-de-pastas)
+- [🚀 Como Executar Localmente](#-como-executar-localmente)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Opção 1: Script Automático](#opção-1-script-automático-recomendado)
+  - [Opção 2: Comandos Manuais](#opção-2-comandos-manuais)
+  - [URLs de Acesso Local](#urls-de-acesso-local)
+  - [Comandos Úteis](#comandos-úteis)
+- [🌐 Deploy](#-deploy)
+  - [Backend + Banco (Railway)](#backend--banco-railway)
+  - [Telegram Bot (Railway)](#telegram-bot-railway)
+  - [Frontend (Cloudflare Pages)](#frontend-cloudflare-pages)
+- [🔧 Desenvolvimento](#-desenvolvimento)
+  - [Estrutura de Dockerfiles](#estrutura-de-dockerfiles)
+- [🔐 Autenticação](#-autenticação)
+  - [TON Connect](#ton-connect)
+  - [JWT Tokens](#jwt-tokens)
+- [📝 Contribuição](#-contribuição)
+- [📄 Licença](#-licença)
+- [🆘 Suporte](#-suporte)
+
+---
 
 ## 🎯 Sobre o Projeto
 
 SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
 
-### 📲 Como acessar o projeto
+### 📲 Como acessar o projeto {#-como-acessar-o-projeto}
 
 Inicie uma conversa com o bot no Telegram:
 ```
@@ -17,11 +48,11 @@ Acesse a interface web:
 https://spliton.pages.dev
 ```
 
-## 😀 Fluxo de uso
+## 😀 Fluxo de uso {#-fluxo-de-uso}
 
 <img src="./assets/clientRoadMap.png"> </img>
 
-## ✨ Features Principais
+## ✨ Features Principais {#-features-principais}
 
 - 🔐 **Autenticação via carteira TON** - Login seguro e descentralizado
 - 👥 **Gerenciamento de grupos** - Crie e gerencie grupos de despesas
@@ -32,9 +63,9 @@ https://spliton.pages.dev
 - 📊 **Histórico completo** - Visualize todas as transações
 - ⚡ **Notificações** - Receba alertas de despesas e pagamentos(Em breve)
 
-## 🏗️ Arquitetura do Projeto
+## 🏗️ Arquitetura do Projeto {#️-arquitetura-do-projeto}
 
-### **Arquitetura do software**
+### **Arquitetura do software** {#arquitetura-do-software}
 <img src="./assets/arquiteturaSpliton.png"></img>
 
 #### Fluxo da Arquitetura SplitOn
@@ -47,7 +78,7 @@ O usuário pode acessar a aplicação SplitOn através de duas formas distintas:
 
 Ambos os fluxos de acesso convergem para o mesmo backend centralizado, assegurando consistência de dados e sincronização completa entre as diferentes interfaces de usuário, com todas as operações blockchain sendo persistidas no banco de dados para auditoria e controle.
 
-### **Stack Tecnológica**
+### **Stack Tecnológica** {#stack-tecnológica}
 
 #### **Frontend**
 - **React 18** + **TypeScript** - Interface moderna e tipada
@@ -75,7 +106,7 @@ Ambos os fluxos de acesso convergem para o mesmo backend centralizado, asseguran
 - **Cloudflare Pages** - Frontend hosting
 - **PostgreSQL** - Banco de dados na nuvem
 
-### **Estrutura de Pastas**
+### **Estrutura de Pastas** {#estrutura-de-pastas}
 
 ```
 spliton/
@@ -120,14 +151,14 @@ spliton/
 └── 📄 README.md
 ```
 
-## 🚀 Como Executar Localmente
+## 🚀 Como Executar Localmente {#-como-executar-localmente}
 
-### **Pré-requisitos**
+### **Pré-requisitos** {#pré-requisitos}
 - Docker Desktop instalado e rodando
 - Node.js 18+ (para desenvolvimento)
 - Git
 
-### **Opção 1: Script Automático (Recomendado)**
+### **Opção 1: Script Automático (Recomendado)** {#opção-1-script-automático-recomendado}
 ```bash
 # Clone o repositório
 git clone https://github.com/seu-usuario/spliton.git
@@ -137,7 +168,7 @@ cd spliton
 ./scripts/dev-local.sh
 ```
 
-### **Opção 2: Comandos Manuais**
+### **Opção 2: Comandos Manuais** {#opção-2-comandos-manuais}
 ```bash
 # Parar containers existentes
 docker compose down
@@ -149,13 +180,13 @@ docker compose up -d --build
 docker compose logs -f backend
 ```
 
-### **URLs de Acesso Local**
+### **URLs de Acesso Local** {#urls-de-acesso-local}
 - **Frontend**: http://localhost:8080
 - **Backend API**: http://localhost:3000
 - **Banco PostgreSQL**: localhost:5432
 - **Health Check**: http://localhost:3000/health
 
-### **Comandos Úteis**
+### **Comandos Úteis** {#comandos-úteis}
 ```bash
 # Ver logs em tempo real
 docker compose logs -f backend
@@ -171,9 +202,9 @@ docker compose exec backend npm run db:seed
 docker compose exec backend npx prisma studio
 ```
 
-## 🌐 Deploy
+## 🌐 Deploy {#-deploy}
 
-### **Backend + Banco (Railway)**
+### **Backend + Banco (Railway)** {#backend--banco-railway}
 O backend é deployado automaticamente no Railway quando há push para a branch `main`.
 
 **Configuração:**
@@ -181,14 +212,14 @@ O backend é deployado automaticamente no Railway quando há push para a branch 
 - **Dockerfile**: `backend/Dockerfile`
 - **Banco**: PostgreSQL
 
-### **Telegram Bot (Railway)**
+### **Telegram Bot (Railway)** {#telegram-bot-railway}
 O bot do Telegram é deployado separadamente no Railway.
 
 **Configuração:**
 - **Arquivo**: `telegram-bot.toml`
 - **Dockerfile**: `telegramBot/Dockerfile`
 
-### **Frontend (Cloudflare Pages)**
+### **Frontend (Cloudflare Pages)** {#frontend-cloudflare-pages}
 O frontend é deployado automaticamente no Cloudflare Pages.
 
 **Configuração:**
@@ -196,9 +227,9 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 - **Output Directory**: `dist`
 - **Framework**: Vite
 
-## 🔧 Desenvolvimento
+## 🔧 Desenvolvimento {#-desenvolvimento}
 
-### **Estrutura de Dockerfiles**
+### **Estrutura de Dockerfiles** {#estrutura-de-dockerfiles}
 
 #### **Railway (Produção)**
 - **Arquivo**: `backend/Dockerfile`
@@ -212,19 +243,19 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 - **Comando**: `COPY . ./`
 - **Seed**: Habilitado (opcional)
 
-## 🔐 Autenticação
+## 🔐 Autenticação {#-autenticação}
 
-### **TON Connect**
+### **TON Connect** {#ton-connect}
 - Integração com carteiras TON
 - Login descentralizado
 - Assinatura de transações
 
-### **JWT Tokens**
+### **JWT Tokens** {#jwt-tokens}
 - Tokens de sessão
 - Refresh automático
 - Validação de permissões
 
-## 📝 Contribuição
+## 📝 Contribuição {#-contribuição}
 
 1. Fork o projeto
 2. Crie uma branch para sua feature
@@ -232,16 +263,18 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 4. Push para a branch
 5. Abra um Pull Request
 
-## 📄 Licença
+## 📄 Licença {#-licença}
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 🆘 Suporte
+## 🆘 Suporte {#-suporte}
 
 - **Issues**: [GitHub Issues](https://github.com/seu-usuario/spliton/issues)
 - **Documentação**: Este README
 - **Telegram**: [@spliton_bot](https://t.me/splitOn_ton_bot)
 
 ---
+
+[⬆️ Voltar ao topo](#spliton)
 
 **SplitOn** - Divisão inteligente de despesas na blockchain TON 🚀
