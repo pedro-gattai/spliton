@@ -8,11 +8,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
+import { useUsernameCheck } from "@/hooks/useUsernameCheck";
+import { CheckCircle, XCircle, Loader2, User } from "lucide-react";
 
 const userRegistrationSchema = z.object({
   firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   lastName: z.string().optional(),
-  username: z.string().optional(),
+  username: z.string()
+    .min(3, "Username deve ter pelo menos 3 caracteres")
+    .max(20, "Username deve ter no máximo 20 caracteres")
+    .regex(/^[a-zA-Z0-9]+$/, "Username deve conter apenas letras e números")
+    .optional(),
   email: z.string().email("Email inválido").optional(),
 });
 
@@ -32,15 +38,20 @@ export const UserRegistrationModal = ({
   onUserCreated,
 }: UserRegistrationModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<UserRegistrationForm>({
     resolver: zodResolver(userRegistrationSchema),
   });
+
+  const watchedUsername = watch("username");
+  const { isAvailable, isChecking, message } = useUsernameCheck(watchedUsername || "");
 
   const onSubmit = async (data: UserRegistrationForm) => {
     setIsLoading(true);
@@ -112,11 +123,40 @@ export const UserRegistrationModal = ({
 
           <div className="space-y-2">
             <Label htmlFor="username">Nome de usuário</Label>
-            <Input
-              id="username"
-              {...register("username")}
-              placeholder="Digite um nome de usuário"
-            />
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <Input
+                id="username"
+                {...register("username")}
+                placeholder="Digite um nome de usuário (apenas letras e números)"
+                className="pl-10 pr-10"
+                onChange={(e) => {
+                  const value = e.target.value.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+                  e.target.value = value;
+                }}
+              />
+              {watchedUsername && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  {isChecking ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : isAvailable === true ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : isAvailable === false ? (
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  ) : null}
+                </div>
+              )}
+            </div>
+            {errors.username && (
+              <p className="text-sm text-destructive">{errors.username.message}</p>
+            )}
+            {watchedUsername && !errors.username && message && (
+              <p className={`text-sm ${isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                {message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -136,7 +176,10 @@ export const UserRegistrationModal = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || (!!watchedUsername && isAvailable === false)}
+            >
               {isLoading ? "Criando..." : "Criar Perfil"}
             </Button>
           </div>

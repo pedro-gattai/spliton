@@ -1,4 +1,4 @@
-import { User, Wallet } from 'lucide-react';
+import { User, Wallet, Mail } from 'lucide-react';
 import { type UserSearchResult } from '@/lib/api';
 
 interface UserSearchResultItemProps {
@@ -18,17 +18,22 @@ export const UserSearchResultItem = ({ user, onSelect, isSelected = false }: Use
     if (user.username) {
       return `@${user.username}`;
     }
+    if (user.email) {
+      return user.email;
+    }
     // Show wallet address preview (first 8 + "..." + last 8)
     const address = user.tonWalletAddress;
     return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
   };
 
   const getIdentifierIcon = () => {
-    return user.username ? (
-      <User className="w-3 h-3 text-blue-500" />
-    ) : (
-      <Wallet className="w-3 h-3 text-green-500" />
-    );
+    if (user.username) {
+      return <User className="w-3 h-3 text-blue-500" />;
+    }
+    if (user.email) {
+      return <Mail className="w-3 h-3 text-purple-500" />;
+    }
+    return <Wallet className="w-3 h-3 text-green-500" />;
   };
 
   const getFullName = () => {

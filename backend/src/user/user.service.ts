@@ -1,13 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-export interface CreateUserDto {
-  tonWalletAddress: string;
-  firstName: string;
-  lastName?: string;
-  username?: string;
-  email?: string;
-}
+import { CreateUserDto } from './dto/create-user.dto';
 
 export interface UserResponse {
   id: string;
@@ -56,6 +53,32 @@ export class UserService {
         return this.mapUserToResponse(existingUser);
       }
 
+      // Verificar se username já existe (se fornecido)
+      if (createUserDto.username) {
+        const existingUsername = await this.prisma.user.findFirst({
+          where: { username: createUserDto.username.toLowerCase() },
+        });
+
+        if (existingUsername) {
+          throw new ConflictException(
+            `Username '${createUserDto.username}' já está em uso`,
+          );
+        }
+      }
+
+      // Verificar se email já existe (se fornecido)
+      if (createUserDto.email) {
+        const existingEmail = await this.prisma.user.findFirst({
+          where: { email: createUserDto.email.toLowerCase() },
+        });
+
+        if (existingEmail) {
+          throw new ConflictException(
+            `Email '${createUserDto.email}' já está em uso`,
+          );
+        }
+      }
+
       // Gerar um telegramId único (usando timestamp + random)
       const telegramId =
         BigInt(Date.now()) + BigInt(Math.floor(Math.random() * 1000));
@@ -66,8 +89,8 @@ export class UserService {
           tonWalletAddress: createUserDto.tonWalletAddress,
           firstName: createUserDto.firstName,
           lastName: createUserDto.lastName,
-          username: createUserDto.username,
-          email: createUserDto.email,
+          username: createUserDto.username?.toLowerCase(),
+          email: createUserDto.email?.toLowerCase(),
         },
       });
 
@@ -76,6 +99,9 @@ export class UserService {
       return this.mapUserToResponse(user);
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`);
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       throw new Error(`Falha ao criar usuário: ${error.message}`);
     }
   }
@@ -101,7 +127,25 @@ export class UserService {
   }
 
   /**
-   * Busca um usuário por username ou endereço da carteira
+   * Busca um usuário pelo username
+   */
+  async findByUsername(username: string): Promise<UserResponse | null> {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { username: username.toLowerCase() },
+      });
+
+      return user ? this.mapUserToResponse(user) : null;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por username: ${error.message}`,
+      );
+      throw new Error(`Falha ao buscar usuário: ${error.message}`);
+    }
+  }
+
+  /**
+   * Busca um usuário por username, email ou endereço da carteira
    */
   async searchUser(identifier: string): Promise<UserResponse | null> {
     try {
@@ -138,6 +182,20 @@ export class UserService {
           },
         });
 
+        // Se não encontrou, tentar por email:
+        if (!user && cleanIdentifier.includes('@')) {
+          this.logger.log(`🔍 Tentando por email: "${cleanIdentifier}"`);
+
+          user = await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: cleanIdentifier.toLowerCase(),
+                mode: 'insensitive',
+              },
+            },
+          });
+        }
+
         // Se não encontrou, tentar por carteira:
         if (
           !user &&
@@ -158,6 +216,30 @@ export class UserService {
             },
           });
         }
+
+        // Se não encontrou, tentar busca por nome (primeiro nome ou sobrenome):
+        if (!user && cleanIdentifier.length >= 3) {
+          this.logger.log(`🔍 Tentando busca por nome: "${cleanIdentifier}"`);
+
+          user = await this.prisma.user.findFirst({
+            where: {
+              OR: [
+                {
+                  firstName: {
+                    contains: cleanIdentifier,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  lastName: {
+                    contains: cleanIdentifier,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            },
+          });
+        }
       }
 
       if (!user) {
@@ -168,12 +250,74 @@ export class UserService {
       }
 
       this.logger.log(
-        `✅ Usuário encontrado: ${user.firstName} (${user.username || user.tonWalletAddress})`,
+        `✅ Usuário encontrado: ${user.firstName} (${user.username || user.email || user.tonWalletAddress})`,
       );
       return this.mapUserToResponse(user);
     } catch (error) {
       this.logger.error(`❌ Erro ao buscar usuário: ${error.message}`);
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
+    }
+  }
+
+  /**
+   * Busca múltiplos usuários por termo de busca
+   */
+  async searchUsers(
+    query: string,
+    limit: number = 10,
+  ): Promise<UserResponse[]> {
+    try {
+      this.logger.log(`🔍 Buscando múltiplos usuários por: "${query}"`);
+
+      const cleanQuery = query.trim();
+      if (!cleanQuery || cleanQuery.length < 2) {
+        return [];
+      }
+
+      const users = await this.prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              username: {
+                contains: cleanQuery,
+                mode: 'insensitive',
+              },
+            },
+            {
+              email: {
+                contains: cleanQuery,
+                mode: 'insensitive',
+              },
+            },
+            {
+              firstName: {
+                contains: cleanQuery,
+                mode: 'insensitive',
+              },
+            },
+            {
+              lastName: {
+                contains: cleanQuery,
+                mode: 'insensitive',
+              },
+            },
+            {
+              tonWalletAddress: {
+                contains: cleanQuery,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        take: limit,
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      });
+
+      this.logger.log(`✅ Encontrados ${users.length} usuários`);
+      return users.map(user => this.mapUserToResponse(user));
+    } catch (error) {
+      this.logger.error(`❌ Erro ao buscar usuários: ${error.message}`);
+      throw new Error(`Falha ao buscar usuários: ${error.message}`);
     }
   }
 

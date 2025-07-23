@@ -67,6 +67,7 @@ interface UserSearchResult {
   firstName: string;
   lastName: string | null;
   username: string | null;
+  email: string | null;
   tonWalletAddress: string;
 }
 
@@ -347,6 +348,51 @@ class ApiService {
       }
       
       throw error;
+    }
+  }
+
+  async searchUsers(query: string, limit: number = 10): Promise<UserSearchResult[]> {
+    try {
+      const cleanQuery = query.trim();
+      console.log(`🔍 API: Buscando múltiplos usuários por "${cleanQuery}"`);
+      
+      const params = new URLSearchParams({
+        q: cleanQuery,
+        limit: limit.toString(),
+      });
+      
+      const response = await this.request<UserSearchResult[]>(`/user/search-multiple?${params}`);
+      
+      console.log('📊 API: Resposta recebida:', response);
+      
+      if (response && response.data !== undefined) {
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ API: Erro na busca múltipla:', error);
+      return [];
+    }
+  }
+
+  async checkUsername(username: string): Promise<{ available: boolean; message: string }> {
+    try {
+      const cleanUsername = username.toLowerCase().trim();
+      console.log(`🔍 API: Verificando username "${cleanUsername}"`);
+      
+      const response = await this.request<{ available: boolean; message: string }>(`/user/check-username/${encodeURIComponent(cleanUsername)}`);
+      
+      console.log('📊 API: Resposta da verificação:', response);
+      
+      if (response && response.data !== undefined) {
+        return response.data;
+      }
+      
+      return { available: false, message: 'Erro na verificação' };
+    } catch (error) {
+      console.error('❌ API: Erro na verificação de username:', error);
+      return { available: false, message: 'Erro na verificação' };
     }
   }
 }

@@ -5,11 +5,13 @@ import {
   Put,
   Body,
   Param,
+  Query,
   HttpStatus,
   HttpException,
   Logger,
 } from '@nestjs/common';
-import { UserService, CreateUserDto } from './user.service';
+import { UserService } from './user.service';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -175,7 +177,7 @@ export class UserController {
 
   /**
    * GET /user/search/:identifier
-   * Busca um usuário por username ou endereço da carteira
+   * Busca um usuário por username, email ou endereço da carteira
    */
   @Get('search/:identifier')
   async searchUser(@Param('identifier') identifier: string) {
@@ -196,6 +198,114 @@ export class UserController {
     } catch (error) {
       this.logger.error(
         `❌ Controller: Erro na rota searchUser: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Erro interno do servidor',
+          details: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * GET /user/search-multiple?q=query&limit=10
+   * Busca múltiplos usuários por termo de busca
+   */
+  @Get('search-multiple')
+  async searchUsers(
+    @Query('q') query: string,
+    @Query('limit') limit: string = '10',
+  ) {
+    try {
+      this.logger.log(
+        `🔍 Controller: Buscando múltiplos usuários por: "${query}"`,
+      );
+
+      if (!query || query.trim().length < 2) {
+        return {
+          success: true,
+          data: [],
+          message: 'Query muito curta',
+        };
+      }
+
+      const limitNumber = Math.min(parseInt(limit) || 10, 50); // Máximo 50 resultados
+      const users = await this.userService.searchUsers(
+        query.trim(),
+        limitNumber,
+      );
+
+      return {
+        success: true,
+        data: users,
+        message: `Encontrados ${users.length} usuários`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Controller: Erro na rota searchUsers: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          success: false,
+          error: 'Erro interno do servidor',
+          details: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * GET /user/check-username/:username
+   * Verifica se um username está disponível
+   */
+  @Get('check-username/:username')
+  async checkUsername(@Param('username') username: string) {
+    try {
+      this.logger.log(`🔍 Verificando disponibilidade do username: "${username}"`);
+
+      const cleanUsername = username.toLowerCase().trim();
+      
+      // Validar formato do username
+      if (!/^[a-zA-Z0-9]+$/.test(cleanUsername)) {
+        return {
+          success: false,
+          available: false,
+          message: 'Username deve conter apenas letras e números',
+        };
+      }
+
+      if (cleanUsername.length < 3) {
+        return {
+          success: false,
+          available: false,
+          message: 'Username deve ter pelo menos 3 caracteres',
+        };
+      }
+
+      if (cleanUsername.length > 20) {
+        return {
+          success: false,
+          available: false,
+          message: 'Username deve ter no máximo 20 caracteres',
+        };
+      }
+
+      const existingUser = await this.userService.findByUsername(cleanUsername);
+
+      return {
+        success: true,
+        available: !existingUser,
+        message: existingUser ? 'Username já está em uso' : 'Username disponível',
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Controller: Erro na verificação de username: ${error.message}`,
       );
 
       throw new HttpException(

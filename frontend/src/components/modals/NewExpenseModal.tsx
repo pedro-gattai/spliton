@@ -317,6 +317,28 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
     form.setValue("participants", updated);
   };
 
+  const handleAddExternalUser = (user: any) => {
+    const current = form.getValues("participants");
+    const exists = current.find((p: any) => p.userId === user.id);
+    
+    if (exists) {
+      toast({
+        title: "Usuário já adicionado",
+        description: "Este usuário já está na lista de participantes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newParticipant = { userId: user.id, amountOwed: "0" };
+    form.setValue("participants", [...current, newParticipant]);
+    
+    toast({
+      title: "Participante adicionado",
+      description: `${user.firstName} foi adicionado como participante externo.`,
+    });
+  };
+
   const handleReceiptUpload = (file: File | null) => {
     setReceiptFile(file);
     
@@ -541,9 +563,11 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                   selected={watchedParticipants}
                   onToggle={toggleParticipant}
                   onAmountChange={updateParticipantAmount}
+                  onAddExternalUser={handleAddExternalUser}
                   splitType={watchedSplitType}
                   showAvatars={true}
                   showBalance={true}
+                  allowExternalUsers={true}
                 />
 
                 {/* Tipo de Divisão */}

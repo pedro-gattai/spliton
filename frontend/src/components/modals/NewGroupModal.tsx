@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Users, UserPlus, Trash2, Loader2, Search, User, Wallet } from "lucide-react";
+import { Plus, X, Users, UserPlus, Trash2, Loader2, Search, User, Wallet, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSearch } from "@/hooks/useUserSearch";
 import { UserSearchResultItem } from "@/components/UserSearchResult";
@@ -118,6 +118,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   const isValidInput = (input: string) => {
     const clean = input.trim();
     if (clean.startsWith('@')) return clean.length >= 4;
+    if (clean.includes('@')) return clean.length >= 5; // Email
     if (clean.startsWith('EQ') || clean.startsWith('UQ')) return clean.length >= 20;
     return clean.length >= 3;
   };
@@ -211,7 +212,10 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     if (searchIdentifier.startsWith('@')) {
       return <User className="w-4 h-4 text-blue-500" />;
     }
-    if (searchIdentifier.length > 0) {
+    if (searchIdentifier.includes('@')) {
+      return <Mail className="w-4 h-4 text-purple-500" />;
+    }
+    if (searchIdentifier.startsWith('EQ') || searchIdentifier.startsWith('UQ')) {
       return <Wallet className="w-4 h-4 text-green-500" />;
     }
     return <Search className="w-4 h-4 text-muted-foreground" />;
@@ -220,8 +224,9 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   // Placeholder dinâmico melhorado
   const getPlaceholder = () => {
     if (searchIdentifier.startsWith('@')) return "Digite o username (ex: @joao123)";
-    if (searchIdentifier.includes('EQ') || searchIdentifier.includes('UQ')) return "Endereço TON detectado...";
-    return "Digite @username ou endereço da carteira TON";
+    if (searchIdentifier.includes('@')) return "Digite o email (ex: joao@email.com)";
+    if (searchIdentifier.startsWith('EQ') || searchIdentifier.startsWith('UQ')) return "Endereço TON detectado...";
+    return "Digite @username, email ou endereço da carteira TON";
   };
 
   const getFullName = (member: any) => {
