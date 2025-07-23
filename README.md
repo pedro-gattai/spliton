@@ -1,14 +1,28 @@
-<img src=".assets/spliton-logo.png"> </img>
+<img src="./assets/spliton-logo.png"> </img>
 # SplitOn 
 **Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
 
-<img src=".assets/clientRoadMap.png"> </img>
+<img src="./assets/clientRoadMap.png"> </img>
 
 ## 🎯 Sobre o Projeto
 
 SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
 
-### 
+### 📲 Como acessar o projeto
+
+Inicie uma conversa com o bot no Telegram:
+```
+@SplitOn_ton_bot
+```
+
+ou
+
+Acesse a interface web
+```
+https://spliton.pages.dev
+```
+
+
 
 ## ✨ Features Principais
 
@@ -24,13 +38,17 @@ SplitOn é uma aplicação descentralizada para divisão de despesas de maneira 
 ## 🏗️ Arquitetura do Projeto
 
 ### **Arquitetura do software**
-<img src=".assets/arquiteturaSpliton.png"></img>
+<img src="./assets/arquiteturaSpliton.png"></img>
 
-O usuario acessa a aplicação;
+# Fluxo da Arquitetura SplitOn
 
-i. por meio da interface web, a interafce web faz requisicoes para o backend que busca informacoes no banco dados para mostrar as informacoes ao usuario, quando ele executa alguma acao o backend atualiza no banco e quando o usuario realiza um pagamento ele executa o smartcontract, sempre salvando as informacoes no banco
+O usuário pode acessar a aplicação SplitOn através de duas formas distintas:
 
-ii. por meio do bot do telegram, o bot do telegram envia uma mensagem de boas vindas e um link para abrir o mini app dentro do aplicativo do telegram, o mini app faz requisicoes para o backend que busca informacoes no banco dados para mostrar as informacoes ao usuario, quando ele executa alguma acao o backend atualiza no banco e quando o usuario realiza um pagamento ele executa o smartcontract, sempre salvando as informacoes no banco.
+**i.** Por meio da interface web, onde a aplicação web realiza requisições HTTP para o backend, que por sua vez consulta o banco de dados PostgreSQL para recuperar e exibir as informações ao usuário. Quando o usuário executa qualquer ação dentro da aplicação, o backend processa a solicitação e atualiza os dados correspondentes no banco de dados. No caso de pagamentos, o usuário interage diretamente com o smart contract através do TON Connect, e todas as informações das transações blockchain são sincronizadas e persistidas no banco de dados pelo backend.
+
+**ii.** Por meio do bot do Telegram, onde inicialmente o bot envia uma mensagem de boas-vindas ao usuário contendo um link para abrir o Mini App diretamente dentro do aplicativo Telegram. Uma vez que o Mini App é carregado, ele opera de forma idêntica à interface web, realizando as mesmas requisições para o backend, que busca as informações no banco de dados para apresentá-las ao usuário. Da mesma forma, quando o usuário executa ações através do Mini App, o backend processa essas solicitações e atualiza o banco de dados. Para pagamentos, o processo também é idêntico: o usuário executa transações através do smart contract via TON Connect, e o backend garante que todas as informações sejam devidamente registradas no banco de dados.
+
+Ambos os fluxos de acesso convergem para o mesmo backend centralizado, assegurando consistência de dados e sincronização completa entre as diferentes interfaces de usuário, com todas as operações blockchain sendo persistidas no banco de dados para auditoria e controle.
 
 ### **Stack Tecnológica**
 
