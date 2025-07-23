@@ -152,5 +152,12 @@ export const useSettlements = (
     isConnected,
     calculateSettlements,
     executeSettlements,
+    clearSettlements: useCallback(() => {
+      setSettlements([]);
+      setTotalAmount(0);
+      setError(null);
+    }, []),
+    hasSettlements: settlements.length > 0,
+    settlementsCount: settlements.length,
   };
 };

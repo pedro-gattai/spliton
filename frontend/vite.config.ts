@@ -35,12 +35,24 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     sourcemap: false,
     target: 'es2020',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu']
+          ui: [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip'
+          ],
+          lucide: ['lucide-react'],
+          utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
         }
       }
     }
