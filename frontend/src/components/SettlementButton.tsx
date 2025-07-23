@@ -24,6 +24,21 @@ import {
 } from 'lucide-react';
 import { useSettlements } from '../hooks/useSettlements';
 
+interface SettlementsData {
+  settlements: Array<{
+    from: string;
+    to: string;
+    amount: number;
+    fromName: string;
+    toName: string;
+    fromAddress?: string;
+    toAddress?: string;
+  }>;
+  totalAmount: number;
+  settlementsCount: number;
+  optimizationSaved?: number;
+}
+
 interface SettlementButtonProps {
   groupId?: string;
   groupName?: string;
@@ -52,9 +67,9 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     hasSettlements,
     totalAmount,
     settlementsCount
-  } = useSettlements({
+  } = useSettlements(
     groupId,
-    onSuccess: (result) => {
+    (result: SettlementsData) => {
       setSuccess(true);
       onSettlementComplete?.();
       setTimeout(() => {
@@ -62,10 +77,10 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
         setSuccess(false);
       }, 2500);
     },
-    onError: (error) => {
+    (error: string) => {
       console.error('Settlement error:', error);
     }
-  });
+  );
 
   const handleOpenDialog = () => {
     setIsOpen(true);
