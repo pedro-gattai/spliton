@@ -150,10 +150,10 @@ docker compose logs -f backend
 ```
 
 ### **URLs de Acesso Local**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
+- **Frontend**: http://localhost:8080
+- **Backend API**: http://localhost:3000
 - **Banco PostgreSQL**: localhost:5432
-- **Health Check**: http://localhost:3001/health
+- **Health Check**: http://localhost:3000/health
 
 ### **Comandos Úteis**
 ```bash
