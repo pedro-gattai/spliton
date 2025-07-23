@@ -1,4 +1,3 @@
-// backend/src/payments/payments.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -25,6 +24,9 @@ export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+
 
   /**
    * Calcular TODAS as dívidas de um usuário
