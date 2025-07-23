@@ -1,4 +1,4 @@
-# SplitOn {#spliton}
+# SplitOn
 **Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
 
 ## 📋 Sumário
@@ -48,11 +48,11 @@ Acesse a interface web:
 https://spliton.pages.dev
 ```
 
-## 😀 Fluxo de uso {#-fluxo-de-uso}
+## 😀 Fluxo de uso
 
 <img src="./assets/clientRoadMap.png"> </img>
 
-## ✨ Features Principais {#-features-principais}
+## ✨ Features Principais
 
 - 🔐 **Autenticação via carteira TON** - Login seguro e descentralizado
 - 👥 **Gerenciamento de grupos** - Crie e gerencie grupos de despesas
@@ -63,9 +63,9 @@ https://spliton.pages.dev
 - 📊 **Histórico completo** - Visualize todas as transações
 - ⚡ **Notificações** - Receba alertas de despesas e pagamentos(Em breve)
 
-## 🏗️ Arquitetura do Projeto {#️-arquitetura-do-projeto}
+## 🏗️ Arquitetura do Projeto
 
-### **Arquitetura do software** {#arquitetura-do-software}
+### **Arquitetura do software**
 <img src="./assets/arquiteturaSpliton.png"></img>
 
 #### Fluxo da Arquitetura SplitOn
@@ -78,7 +78,7 @@ O usuário pode acessar a aplicação SplitOn através de duas formas distintas:
 
 Ambos os fluxos de acesso convergem para o mesmo backend centralizado, assegurando consistência de dados e sincronização completa entre as diferentes interfaces de usuário, com todas as operações blockchain sendo persistidas no banco de dados para auditoria e controle.
 
-### **Stack Tecnológica** {#stack-tecnológica}
+### **Stack Tecnológica**
 
 #### **Frontend**
 - **React 18** + **TypeScript** - Interface moderna e tipada
@@ -106,7 +106,7 @@ Ambos os fluxos de acesso convergem para o mesmo backend centralizado, asseguran
 - **Cloudflare Pages** - Frontend hosting
 - **PostgreSQL** - Banco de dados na nuvem
 
-### **Estrutura de Pastas** {#estrutura-de-pastas}
+### **Estrutura de Pastas**
 
 ```
 spliton/
@@ -151,14 +151,14 @@ spliton/
 └── 📄 README.md
 ```
 
-## 🚀 Como Executar Localmente {#-como-executar-localmente}
+## 🚀 Como Executar Localmente
 
-### **Pré-requisitos** {#pré-requisitos}
+### **Pré-requisitos**
 - Docker Desktop instalado e rodando
 - Node.js 18+ (para desenvolvimento)
 - Git
 
-### **Opção 1: Script Automático (Recomendado)** {#opção-1-script-automático-recomendado}
+### **Opção 1: Script Automático (Recomendado)**
 ```bash
 # Clone o repositório
 git clone https://github.com/seu-usuario/spliton.git
@@ -168,7 +168,7 @@ cd spliton
 ./scripts/dev-local.sh
 ```
 
-### **Opção 2: Comandos Manuais** {#opção-2-comandos-manuais}
+### **Opção 2: Comandos Manuais**
 ```bash
 # Parar containers existentes
 docker compose down
@@ -180,13 +180,13 @@ docker compose up -d --build
 docker compose logs -f backend
 ```
 
-### **URLs de Acesso Local** {#urls-de-acesso-local}
+### **URLs de Acesso Local**
 - **Frontend**: http://localhost:8080
 - **Backend API**: http://localhost:3000
 - **Banco PostgreSQL**: localhost:5432
 - **Health Check**: http://localhost:3000/health
 
-### **Comandos Úteis** {#comandos-úteis}
+### **Comandos Úteis**
 ```bash
 # Ver logs em tempo real
 docker compose logs -f backend
@@ -202,9 +202,9 @@ docker compose exec backend npm run db:seed
 docker compose exec backend npx prisma studio
 ```
 
-## 🌐 Deploy {#-deploy}
+## 🌐 Deploy
 
-### **Backend + Banco (Railway)** {#backend--banco-railway}
+### **Backend + Banco (Railway)**
 O backend é deployado automaticamente no Railway quando há push para a branch `main`.
 
 **Configuração:**
@@ -212,14 +212,14 @@ O backend é deployado automaticamente no Railway quando há push para a branch 
 - **Dockerfile**: `backend/Dockerfile`
 - **Banco**: PostgreSQL
 
-### **Telegram Bot (Railway)** {#telegram-bot-railway}
+### **Telegram Bot (Railway)**
 O bot do Telegram é deployado separadamente no Railway.
 
 **Configuração:**
 - **Arquivo**: `telegram-bot.toml`
 - **Dockerfile**: `telegramBot/Dockerfile`
 
-### **Frontend (Cloudflare Pages)** {#frontend-cloudflare-pages}
+### **Frontend (Cloudflare Pages)**
 O frontend é deployado automaticamente no Cloudflare Pages.
 
 **Configuração:**
@@ -227,9 +227,9 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 - **Output Directory**: `dist`
 - **Framework**: Vite
 
-## 🔧 Desenvolvimento {#-desenvolvimento}
+## 🔧 Desenvolvimento
 
-### **Estrutura de Dockerfiles** {#estrutura-de-dockerfiles}
+### **Estrutura de Dockerfiles**
 
 #### **Railway (Produção)**
 - **Arquivo**: `backend/Dockerfile`
