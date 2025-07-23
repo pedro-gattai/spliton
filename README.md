@@ -32,11 +32,11 @@
 
 ---
 
-## 🎯 Sobre o Projeto {#-sobre-o-projeto}
+## 🎯 Sobre o Projeto
 
 SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
 
-### 📲 Como acessar o projeto {#-como-acessar-o-projeto}
+### 📲 Como acessar o projeto
 
 Inicie uma conversa com o bot no Telegram:
 ```
@@ -243,19 +243,19 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 - **Comando**: `COPY . ./`
 - **Seed**: Habilitado (opcional)
 
-## 🔐 Autenticação {#-autenticação}
+## 🔐 Autenticação
 
-### **TON Connect** {#ton-connect}
+### **TON Connect**
 - Integração com carteiras TON
 - Login descentralizado
 - Assinatura de transações
 
-### **JWT Tokens** {#jwt-tokens}
+### **JWT Tokens**
 - Tokens de sessão
 - Refresh automático
 - Validação de permissões
 
-## 📝 Contribuição {#-contribuição}
+## 📝 Contribuição
 
 1. Fork o projeto
 2. Crie uma branch para sua feature
@@ -263,11 +263,11 @@ O frontend é deployado automaticamente no Cloudflare Pages.
 4. Push para a branch
 5. Abra um Pull Request
 
-## 📄 Licença {#-licença}
+## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 🆘 Suporte {#-suporte}
+## 🆘 Suporte
 
 - **Issues**: [GitHub Issues](https://github.com/seu-usuario/spliton/issues)
 - **Documentação**: Este README
