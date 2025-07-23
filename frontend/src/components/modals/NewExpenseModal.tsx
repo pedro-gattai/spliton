@@ -151,7 +151,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   // Executar cálculo quando mudar valor, participantes, pagador ou tipo de divisão
   useEffect(() => {
     const amount = Number(watchedAmount);
-    if (amount > 0 && watchedParticipants && watchedParticipants.length > 0 && watchedPayerId) {
+    if (amount > 0 && watchedParticipants && watchedParticipants.length > 0 && watchedPayerId && watchedSplitType) {
       calculateSplit(amount, watchedParticipants, watchedSplitType);
     }
   }, [watchedAmount, watchedParticipants?.length, watchedSplitType, watchedPayerId, calculateSplit]);
@@ -190,7 +190,9 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   }, [form]);
 
   useEffect(() => {
-    suggestCategory(watchedDescription);
+    if (watchedDescription) {
+      suggestCategory(watchedDescription);
+    }
   }, [watchedDescription, suggestCategory]);
 
   // Sugerir pagador baseado no saldo
