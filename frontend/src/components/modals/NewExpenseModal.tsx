@@ -126,16 +126,28 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   // Cálculo automático em tempo real - usando setTimeout para quebrar o loop
   const calculateSplit = useCallback((amount: number, participants: any[], splitType: string) => {
     if (splitType === 'EQUAL' && participants.length > 0) {
-      const amountPerPerson = amount / participants.length;
-      const updatedParticipants = participants.map(p => ({
-        ...p,
-        amountOwed: amountPerPerson.toFixed(2)
-      }));
+      const payerId = form.getValues("payerId");
       
-      // Use setTimeout to break the render loop
-      setTimeout(() => {
-        form.setValue("participants", updatedParticipants);
-      }, 0);
+      // Para divisão igual, excluir o pagador do cálculo
+      const participantsExcludingPayer = participants.filter(p => p.userId !== payerId);
+      
+      if (participantsExcludingPayer.length > 0) {
+        const amountPerPerson = amount / participantsExcludingPayer.length;
+        const updatedParticipants = participants.map(p => {
+          if (p.userId === payerId) {
+            // Pagador não deve nada
+            return { ...p, amountOwed: "0" };
+          } else {
+            // Outros participantes dividem igual
+            return { ...p, amountOwed: amountPerPerson.toFixed(2) };
+          }
+        });
+        
+        // Use setTimeout to break the render loop
+        setTimeout(() => {
+          form.setValue("participants", updatedParticipants);
+        }, 0);
+      }
     }
   }, [form]);
 
@@ -600,6 +612,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                     participants={getParticipantsWithNames()}
                     payer={getPayerName()}
                     splitType={watchedSplitType}
+                    payerId={form.getValues("payerId")}
                   />
                 )}
 

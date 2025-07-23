@@ -117,15 +117,22 @@ export class ExpensesService {
         },
       });
 
-      // Create participants
+      // Create participants - EXCLUDE the payer from participants
       if (participants && participants.length > 0) {
-        await prisma.expenseParticipant.createMany({
-          data: participants.map(participant => ({
-            expenseId: expense.id,
-            userId: participant.userId,
-            amountOwed: participant.amountOwed,
-          })),
-        });
+        // Filter out the payer from participants to avoid self-payment
+        const participantsExcludingPayer = participants.filter(
+          participant => participant.userId !== expenseData.payerId,
+        );
+
+        if (participantsExcludingPayer.length > 0) {
+          await prisma.expenseParticipant.createMany({
+            data: participantsExcludingPayer.map(participant => ({
+              expenseId: expense.id,
+              userId: participant.userId,
+              amountOwed: participant.amountOwed,
+            })),
+          });
+        }
       }
 
       // Return the complete expense with participants
@@ -158,7 +165,7 @@ export class ExpensesService {
 
     return await this.prisma.$transaction(async prisma => {
       // Update the expense
-      await prisma.expense.update({
+      const updatedExpense = await prisma.expense.update({
         where: { id },
         data: expenseData,
         include: {
@@ -174,15 +181,22 @@ export class ExpensesService {
           where: { expenseId: id },
         });
 
-        // Create new participants
+        // Create new participants - EXCLUDE the payer from participants
         if (participants.length > 0) {
-          await prisma.expenseParticipant.createMany({
-            data: participants.map(participant => ({
-              expenseId: id,
-              userId: participant.userId,
-              amountOwed: participant.amountOwed,
-            })),
-          });
+          // Filter out the payer from participants to avoid self-payment
+          const participantsExcludingPayer = participants.filter(
+            participant => participant.userId !== updatedExpense.payerId,
+          );
+
+          if (participantsExcludingPayer.length > 0) {
+            await prisma.expenseParticipant.createMany({
+              data: participantsExcludingPayer.map(participant => ({
+                expenseId: id,
+                userId: participant.userId,
+                amountOwed: participant.amountOwed,
+              })),
+            });
+          }
         }
       }
 
