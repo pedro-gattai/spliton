@@ -32,8 +32,10 @@ export const useTonContract = () => {
   };
 
   const isValidTonAddress = (address: string): boolean => {
-    // TON addresses começam com EQ, UQ, ou kQ e têm 48 caracteres
-    return /^(EQ|UQ|kQ)[A-Za-z0-9_-]{46}$/.test(address);
+    // TON addresses podem ser base64 (EQ..., UQ..., kQ...) ou raw (0:...)
+    const base64Pattern = /^(EQ|UQ|kQ)[A-Za-z0-9_-]{46}$/;
+    const rawPattern = /^0:[a-fA-F0-9]{64}$/;
+    return base64Pattern.test(address) || rawPattern.test(address);
   };
 
   // Função para executar BatchSettlement
@@ -130,6 +132,7 @@ export const useTonContract = () => {
           error: 'Carteira TON não conectada'
         };
       }
+      console.log('🚀 Executando pagamento direto:', { to, amount, description });
 
       setIsExecuting(true);
       try {
