@@ -17,7 +17,7 @@ Inicie uma conversa com o bot no Telegram:
 
 ou
 
-Acesse a interface web
+Acesse a interface web:
 ```
 https://spliton.pages.dev
 ```
@@ -40,7 +40,7 @@ https://spliton.pages.dev
 ### **Arquitetura do software**
 <img src="./assets/arquiteturaSpliton.png"></img>
 
-# Fluxo da Arquitetura SplitOn
+#### Fluxo da Arquitetura SplitOn
 
 O usuário pode acessar a aplicação SplitOn através de duas formas distintas:
 
@@ -216,72 +216,6 @@ O bot do Telegram é deployado separadamente no Railway.
 - **Comando**: `COPY . ./`
 - **Seed**: Habilitado (opcional)
 
-### **Banco de Dados**
-
-#### **Schema Principal**
-```prisma
-model User {
-  id                String   @id @default(uuid())
-  telegramId        BigInt   @unique
-  username          String   @unique
-  email             String?  @unique
-  tonWalletAddress  String
-  // ... relações
-}
-
-model Group {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  createdBy   String
-  inviteCode  String   @unique
-  // ... relações
-}
-
-model Expense {
-  id          String   @id @default(uuid())
-  groupId     String
-  payerId     String
-  description String?
-  amount      Float
-  category    String?
-  // ... relações
-}
-```
-
-#### **Migrations**
-```bash
-# Criar nova migration
-npx prisma migrate dev --name nome_da_migration
-
-# Aplicar migrations em produção
-npx prisma migrate deploy
-
-# Resetar banco (desenvolvimento)
-npx prisma migrate reset
-```
-
-### **API Endpoints**
-
-#### **Usuários**
-- `POST /user` - Criar usuário
-- `GET /user/search` - Buscar usuários
-- `GET /user/:id` - Obter usuário
-
-#### **Grupos**
-- `POST /group` - Criar grupo
-- `GET /group` - Listar grupos do usuário
-- `GET /group/:id` - Obter detalhes do grupo
-
-#### **Despesas**
-- `POST /expenses` - Criar despesa
-- `GET /expenses` - Listar despesas
-- `GET /expenses/:id` - Obter detalhes da despesa
-
-#### **Pagamentos**
-- `POST /payments/calculate` - Calcular liquidações
-- `POST /payments/execute` - Executar pagamentos
-
 ## 🔐 Autenticação
 
 ### **TON Connect**
@@ -293,90 +227,6 @@ npx prisma migrate reset
 - Tokens de sessão
 - Refresh automático
 - Validação de permissões
-
-## 📱 Frontend
-
-### **Componentes Principais**
-- **AppHeader** - Header da aplicação
-- **BottomNavigation** - Navegação mobile
-- **NewGroupModal** - Criar grupo
-- **NewExpenseModal** - Criar despesa
-- **ParticipantSelector** - Selecionar participantes
-- **SettlementButton** - Executar pagamentos
-
-### **Hooks Customizados**
-- **useWalletConnection** - Conexão com carteira
-- **useGroups** - Gerenciamento de grupos
-- **useExpenses** - Gerenciamento de despesas
-- **useSettlements** - Cálculo de liquidações
-
-## 🤖 Telegram Bot
-
-### **Funcionalidades**
-- Acesso rápido ao aplicativo
-- Notificações de despesas
-- Comandos básicos de consulta
-
-### **Deploy**
-- Railway com Python
-- Webhook para Telegram
-- Integração com backend
-
-## 🧪 Testes
-
-### **Backend**
-```bash
-# Testes unitários
-npm run test
-
-# Testes e2e
-npm run test:e2e
-
-# Cobertura
-npm run test:cov
-```
-
-### **Frontend**
-```bash
-# Testes (quando implementados)
-npm run test
-```
-
-## 📊 Monitoramento
-
-### **Health Checks**
-- `GET /health` - Status geral
-- `GET /health/db` - Status do banco
-
-### **Logs**
-- Logs estruturados
-- Níveis de log configuráveis
-- Integração com Railway
-
-## 🔧 Troubleshooting
-
-### **Problemas Comuns**
-
-#### **Porta 3000/5432 já em uso**
-```bash
-# Parar processos
-lsof -ti:3000 | xargs kill -9
-lsof -ti:5432 | xargs kill -9
-```
-
-#### **Containers não iniciam**
-```bash
-# Limpar tudo
-docker compose down -v
-docker system prune -f
-./scripts/dev-local.sh
-```
-
-#### **Erro de migrations**
-```bash
-# Resetar banco
-docker compose exec backend npx prisma migrate reset
-```
 
 ## 📝 Contribuição
 
