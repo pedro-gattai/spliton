@@ -41,7 +41,6 @@ const groupSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome muito longo"),
   description: z.string().optional(),
   type: z.enum(["travel", "home", "work", "friends", "other"]),
-  currency: z.string().default("TON"),
   members: z.array(z.object({
     id: z.string().min(1, "ID do usuário é obrigatório"),
     username: z.string().min(1, "Username é obrigatório"),
@@ -92,7 +91,6 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
       name: "",
       description: "",
       type: "friends",
-      currency: "TON",
       members: [],
     },
   });
@@ -448,30 +446,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
               />
             </div>
 
-            {/* Moeda */}
-            <FormField
-              control={form.control}
-              name="currency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Moeda Padrão</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="TON">TON</SelectItem>
-                      <SelectItem value="USDT">USDT</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="BRL">BRL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
 
             {/* Resumo */}
             {watchedMembers.length > 0 && (

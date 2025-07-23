@@ -84,8 +84,8 @@ export const ParticipantSelector = ({
   };
 
   const getBalanceText = (balance?: number) => {
-    if (!balance) return 'Saldo: R$ 0,00';
-    return `Saldo: ${balance > 0 ? '+' : ''}R$ ${balance.toFixed(2)}`;
+    if (!balance) return 'Saldo: 0.00 TON';
+    return `Saldo: ${balance > 0 ? '+' : ''}${balance.toFixed(2)} TON`;
   };
 
   const isSelected = (userId: string) => {
@@ -282,7 +282,7 @@ export const ParticipantSelector = ({
 
               {splitType === 'CUSTOM' && selected && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">R$</span>
+                  <span className="text-xs text-muted-foreground">TON</span>
                   <Input
                     type="number"
                     step="0.01"

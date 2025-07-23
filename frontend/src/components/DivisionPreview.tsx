@@ -34,7 +34,7 @@ export const DivisionPreview = ({ amount, participants, payer, splitType, payerI
           <Crown className="w-4 h-4 text-yellow-500" />
           <span className="font-medium">{payer}</span>
           <span>paga</span>
-          <span className="font-bold text-primary">R$ {amount.toFixed(2)}</span>
+          <span className="font-bold text-primary">{amount.toFixed(2)} TON</span>
         </div>
 
         {/* Nota sobre o pagador */}
@@ -55,7 +55,7 @@ export const DivisionPreview = ({ amount, participants, payer, splitType, payerI
                 <span className="text-red-500">💸</span>
                 <span className="font-medium">{participant.userName}</span>
                 <span>deve</span>
-                <span className="font-bold text-red-600">R$ {participant.amountOwed.toFixed(2)}</span>
+                <span className="font-bold text-red-600">{participant.amountOwed.toFixed(2)} TON</span>
               </div>
             ))}
           </div>
@@ -72,7 +72,7 @@ export const DivisionPreview = ({ amount, participants, payer, splitType, payerI
         {/* Validação */}
         {!isValid && (
           <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-            ⚠️ A soma dos valores ({totalOwed.toFixed(2)}) deve ser igual ao total ({amount.toFixed(2)})
+            ⚠️ A soma dos valores ({totalOwed.toFixed(2)} TON) deve ser igual ao total ({amount.toFixed(2)} TON)
           </div>
         )}
 

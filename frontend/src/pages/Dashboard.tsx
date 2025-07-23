@@ -38,7 +38,6 @@ type GroupFormData = {
   name: string;
   description?: string;
   type: "travel" | "home" | "work" | "friends" | "other";
-  currency: string;
   members: Array<{
     name: string;
     email?: string;

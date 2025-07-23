@@ -166,7 +166,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
       if (difference > 0.01) {
         setTotalValidation({
           isValid: false,
-          message: `A soma deve ser R$ ${amount.toFixed(2)}. Atual: R$ ${totalOwed.toFixed(2)}`
+          message: `A soma deve ser ${amount.toFixed(2)} TON. Atual: ${totalOwed.toFixed(2)} TON`
         });
       } else {
         setTotalValidation({ isValid: true, message: '' });
