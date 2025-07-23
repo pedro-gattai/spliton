@@ -122,43 +122,39 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const watchedParticipants = form.watch("participants");
   const watchedSplitType = form.watch("splitType");
   const watchedDescription = form.watch("description");
+  const watchedPayerId = form.watch("payerId");
 
   // Cálculo automático em tempo real - usando setTimeout para quebrar o loop
   const calculateSplit = useCallback((amount: number, participants: any[], splitType: string) => {
     if (splitType === 'EQUAL' && participants.length > 0) {
-      const payerId = form.getValues("payerId");
+      const payerId = watchedPayerId;
       
-      // Para divisão igual, excluir o pagador do cálculo
-      const participantsExcludingPayer = participants.filter(p => p.userId !== payerId);
+      // Para divisão igual, dividir o valor total entre TODOS os participantes
+      const amountPerPerson = amount / participants.length;
+      const updatedParticipants = participants.map(p => {
+        if (p.userId === payerId) {
+          // Pagador não deve nada (já pagou)
+          return { ...p, amountOwed: "0" };
+        } else {
+          // Outros participantes devem sua parte
+          return { ...p, amountOwed: amountPerPerson.toFixed(2) };
+        }
+      });
       
-      if (participantsExcludingPayer.length > 0) {
-        const amountPerPerson = amount / participantsExcludingPayer.length;
-        const updatedParticipants = participants.map(p => {
-          if (p.userId === payerId) {
-            // Pagador não deve nada
-            return { ...p, amountOwed: "0" };
-          } else {
-            // Outros participantes dividem igual
-            return { ...p, amountOwed: amountPerPerson.toFixed(2) };
-          }
-        });
-        
-        // Use setTimeout to break the render loop
-        setTimeout(() => {
-          form.setValue("participants", updatedParticipants);
-        }, 0);
-      }
+      // Use setTimeout to break the render loop
+      setTimeout(() => {
+        form.setValue("participants", updatedParticipants);
+      }, 0);
     }
-  }, [form]);
+  }, [form, watchedPayerId]);
 
-  // Executar cálculo quando mudar valor, participantes ou tipo de divisão
-  // Removed calculateSplit from dependencies to break the loop
+  // Executar cálculo quando mudar valor, participantes, pagador ou tipo de divisão
   useEffect(() => {
     const amount = Number(watchedAmount);
-    if (amount > 0 && watchedParticipants.length > 0) {
+    if (amount > 0 && watchedParticipants.length > 0 && watchedPayerId) {
       calculateSplit(amount, watchedParticipants, watchedSplitType);
     }
-  }, [watchedAmount, watchedParticipants.length, watchedSplitType]); // Removed calculateSplit
+  }, [watchedAmount, watchedParticipants.length, watchedSplitType, watchedPayerId, calculateSplit]);
 
   // Validação da soma em tempo real
   useEffect(() => {
@@ -365,8 +361,8 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   };
 
   const getPayerName = () => {
-    if (!selectedGroup || !form.getValues("payerId")) return "";
-    const payer = selectedGroup.members.find((m: any) => m.user.id === form.getValues("payerId"));
+    if (!selectedGroup || !watchedPayerId) return "";
+    const payer = selectedGroup.members.find((m: any) => m.user.id === watchedPayerId);
     return payer ? `@${payer.user.username}` : "";
   };
 
@@ -542,7 +538,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                               <SelectItem key={member.user.id} value={member.user.id}>
                                 <div className="flex items-center gap-2">
                                   <Crown className="w-4 h-4" />
-                                  {member.user.firstName}
+                                  @{member.user.username}
                                   {isRecommended && (
                                     <Badge variant="secondary" className="text-xs">
                                       Recomendado
@@ -606,13 +602,13 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                 />
 
                 {/* Preview da Divisão */}
-                {Number(watchedAmount) > 0 && watchedParticipants.length > 0 && (
+                {Number(watchedAmount) > 0 && watchedParticipants.length > 0 && watchedPayerId && (
                   <DivisionPreview
                     amount={Number(watchedAmount)}
                     participants={getParticipantsWithNames()}
                     payer={getPayerName()}
                     splitType={watchedSplitType}
-                    payerId={form.getValues("payerId")}
+                    payerId={watchedPayerId}
                   />
                 )}
 

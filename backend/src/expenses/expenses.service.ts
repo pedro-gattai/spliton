@@ -117,16 +117,16 @@ export class ExpensesService {
         },
       });
 
-      // Create participants - EXCLUDE the payer from participants
+      // Create participants - accept all participants (payer with amountOwed: 0 is fine)
       if (participants && participants.length > 0) {
-        // Filter out the payer from participants to avoid self-payment
-        const participantsExcludingPayer = participants.filter(
-          participant => participant.userId !== expenseData.payerId,
+        // Filter out participants with amountOwed: 0 to avoid unnecessary records
+        const participantsWithDebt = participants.filter(
+          participant => participant.amountOwed > 0,
         );
 
-        if (participantsExcludingPayer.length > 0) {
+        if (participantsWithDebt.length > 0) {
           await prisma.expenseParticipant.createMany({
-            data: participantsExcludingPayer.map(participant => ({
+            data: participantsWithDebt.map(participant => ({
               expenseId: expense.id,
               userId: participant.userId,
               amountOwed: participant.amountOwed,
@@ -165,7 +165,7 @@ export class ExpensesService {
 
     return await this.prisma.$transaction(async prisma => {
       // Update the expense
-      const updatedExpense = await prisma.expense.update({
+      await prisma.expense.update({
         where: { id },
         data: expenseData,
         include: {
@@ -181,16 +181,16 @@ export class ExpensesService {
           where: { expenseId: id },
         });
 
-        // Create new participants - EXCLUDE the payer from participants
+        // Create new participants - accept all participants (payer with amountOwed: 0 is fine)
         if (participants.length > 0) {
-          // Filter out the payer from participants to avoid self-payment
-          const participantsExcludingPayer = participants.filter(
-            participant => participant.userId !== updatedExpense.payerId,
+          // Filter out participants with amountOwed: 0 to avoid unnecessary records
+          const participantsWithDebt = participants.filter(
+            participant => participant.amountOwed > 0,
           );
 
-          if (participantsExcludingPayer.length > 0) {
+          if (participantsWithDebt.length > 0) {
             await prisma.expenseParticipant.createMany({
-              data: participantsExcludingPayer.map(participant => ({
+              data: participantsWithDebt.map(participant => ({
                 expenseId: id,
                 userId: participant.userId,
                 amountOwed: participant.amountOwed,
