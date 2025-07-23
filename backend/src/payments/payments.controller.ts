@@ -72,4 +72,39 @@ export class PaymentsController {
       };
     }
   }
+  /**
+   * POST /payments/pay
+   * Executa o pagamento de uma dívida via smart contract (TON)
+   */
+  @Post('pay')
+  async payDebt(
+    @Body()
+    body: {
+      toAddress: string;
+      amount: number;
+      groupId?: string;
+      description?: string;
+    },
+  ) {
+    try {
+      this.logger.log(
+        `🚀 Executando pagamento via contrato: para ${body.toAddress}, valor ${body.amount} TON`,
+      );
+
+      const result = await this.paymentsService.payDebtViaSmartContract(
+        body.toAddress,
+        body.amount,
+        body.groupId,
+        body.description,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Erro no endpoint payDebt:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
 }
