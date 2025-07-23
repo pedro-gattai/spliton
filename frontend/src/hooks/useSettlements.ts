@@ -48,8 +48,10 @@ export const useSettlements = (
     setError(null);
 
     try {
+      // Use direct fetch with proper API base URL
+      const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
       const queryParam = groupId ? `?groupId=${groupId}` : '';
-      const url = `/api/payments/debts/${user.id}${queryParam}`;
+      const url = `${API_BASE_URL}/payments/debts/${user.id}${queryParam}`;
       
       const response = await fetch(url);
       
@@ -99,7 +101,7 @@ export const useSettlements = (
 
       onSuccess?.(settlementsData);
       
-      console.log(`✅ ${data.debtsCount} dívidas encontradas`); //chega aqui
+      console.log(`✅ ${data.debtsCount} dívidas encontradas`);
       
       return true;
     } catch (error) {
@@ -169,7 +171,8 @@ export const useSettlements = (
       // Marcar dívidas como pagas
       if (participantIds.length > 0) {
         try {
-          const markResponse = await fetch('/api/payments/mark-paid', {
+          const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+          const markResponse = await fetch(`${API_BASE_URL}/payments/mark-paid`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ participantIds })
@@ -240,7 +243,8 @@ export const useSettlements = (
       console.log(`✅ Pagamento individual realizado:`, result);
 
       // Marcar esta dívida como paga
-      const markResponse = await fetch('/api/payments/mark-paid', {
+      const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+      const markResponse = await fetch(`${API_BASE_URL}/payments/mark-paid`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participantIds: [settlement.participantId] })
@@ -266,106 +270,7 @@ export const useSettlements = (
     }
   }, [connected, executeDirectPayment, onError]);
 
-  // Executar settlements usando a rota /payments/pay (DEPRECATED - manter para compatibilidade)
-  const executeSettlements = useCallback(async (): Promise<boolean> => {
-    console.log("DEBUUUUUUUUUUUUGGGGGGGGGG")
-    if (!connected) {
-      const errorMsg = 'Conecte sua carteira TON primeiro!';
-      setError(errorMsg);
-      onError?.(errorMsg);
-      return false;
-    }
 
-    if (settlements.length === 0) {
-      const errorMsg = 'Nenhuma dívida para pagar';
-      setError(errorMsg);
-      onError?.(errorMsg);
-      return false;
-    }
-
-    setIsExecuting(true);
-    setError(null);
-
-    try {
-
-      let successfulPayments = 0;
-      const participantIds: string[] = [];
-
-      // Executar cada pagamento individualmente via backend
-      for (const settlement of settlements) {
-
-        try {
-          // ✅ Usar a rota /payments/pay do backend
-          const response = await fetch('/api/payments/pay', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              toAddress: settlement.toAddress,
-              amount: settlement.amount,
-              groupId: groupId || undefined,
-              description: `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
-            })
-          });
-
-          const result = await response.json();
-          
-          if (!result.success) {
-            console.error(`❌ Falha no pagamento para ${settlement.toName}:`, result.error);
-            continue; // Continua com os outros pagamentos
-          }
-
-          successfulPayments++;
-          
-          // Adicionar à lista para marcar como pago
-          if (settlement.participantId) {
-            participantIds.push(settlement.participantId);
-          }
-
-        } catch (paymentError) {
-          console.error(`❌ Erro no pagamento para ${settlement.toName}:`, paymentError);
-        }
-      }
-
-      // Marcar dívidas como pagas no backend (se houve pagamentos bem-sucedidos)
-      if (participantIds.length > 0) {
-        try {
-          const markResponse = await fetch('/api/payments/mark-paid', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ participantIds })
-          });
-
-          if (!markResponse.ok) {
-            console.warn('⚠️ Pagamentos realizados mas falha ao marcar no backend');
-          } else {
-            console.log(`✅ ${participantIds.length} dívidas marcadas como pagas`);
-          }
-        } catch (markError) {
-          console.warn('⚠️ Erro ao marcar dívidas como pagas:', markError);
-        }
-      }
-
-      if (successfulPayments === 0) {
-        throw new Error('Nenhum pagamento foi processado com sucesso');
-      }
-
-      // Limpar settlements após execução
-      setSettlements([]);
-      setTotalAmount(0);
-
-      console.log(`✅ ${successfulPayments}/${settlements.length} pagamentos executados com sucesso!`);
-      return true;
-
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('❌ Erro ao executar settlements:', errorMsg);
-      setError(errorMsg);
-      onError?.(errorMsg);
-      return false;
-    } finally {
-      setIsExecuting(false);
-    }
-  }, [connected, settlements, groupId, onError]);
 
   // Limpar settlements
   const clearSettlements = useCallback(() => {
@@ -383,7 +288,6 @@ export const useSettlements = (
     error,
     connected,
     calculateSettlements,
-    executeSettlements, // deprecated - usar executeAllSettlements
     executeAllSettlements,
     executeIndividualSettlement,
     clearSettlements,

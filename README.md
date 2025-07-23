@@ -32,7 +32,7 @@
 
 ---
 
-## 🎯 Sobre o Projeto
+## 🎯 Sobre o Projeto {#-sobre-o-projeto}
 
 SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
 
