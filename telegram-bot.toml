@@ -4,8 +4,6 @@ dockerfilePath = "telegramBot/Dockerfile"
 
 [deploy]
 startCommand = "python bot.py"
-healthcheckPath = "/"
-healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
