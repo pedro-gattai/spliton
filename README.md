@@ -244,7 +244,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 - **Issues**: [GitHub Issues](https://github.com/seu-usuario/spliton/issues)
 - **Documentação**: Este README
-- **Telegram**: [@spliton_bot](https://t.me/spliton_bot)
+- **Telegram**: [@spliton_bot](https://t.me/splitOn_ton_bot)
 
 ---
 
