@@ -38,61 +38,49 @@ async function main() {
       data: {
         telegramId: BigInt(123456789),
         username: 'joao_silva',
-        firstName: 'João',
-        lastName: 'Silva',
         tonWalletAddress:
           'EQD123456789012345678901234567890123456789012345678901234567890',
-      },
+      } as any,
     }),
     prisma.user.create({
       data: {
         telegramId: BigInt(987654321),
         username: 'maria_santos',
-        firstName: 'Maria',
-        lastName: 'Santos',
         tonWalletAddress:
           'EQD987654321098765432109876543210987654321098765432109876543210',
-      },
+      } as any,
     }),
     prisma.user.create({
       data: {
         telegramId: BigInt(555666777),
         username: 'pedro_oliveira',
-        firstName: 'Pedro',
-        lastName: 'Oliveira',
         tonWalletAddress:
           'EQD555666777888999000111222333444555666777888999000111222333444',
-      },
+      } as any,
     }),
     prisma.user.create({
       data: {
         telegramId: BigInt(111222333),
         username: 'ana_costa',
-        firstName: 'Ana',
-        lastName: 'Costa',
         tonWalletAddress:
           'EQD111222333444555666777888999000111222333444555666777888999000',
-      },
+      } as any,
     }),
     prisma.user.create({
       data: {
         telegramId: BigInt(444555666),
         username: 'carlos_lima',
-        firstName: 'Carlos',
-        lastName: 'Lima',
         tonWalletAddress:
           'EQD444555666777888999000111222333444555666777888999000111222333',
-      },
+      } as any,
     }),
     prisma.user.create({
       data: {
         telegramId: BigInt(777888999),
         username: 'julia_ferreira',
-        firstName: 'Júlia',
-        lastName: 'Ferreira',
         tonWalletAddress:
           'EQD777888999000111222333444555666777888999000111222333444555666',
-      },
+      } as any,
     }),
   ]);
 
@@ -756,7 +744,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Erro durante o seed:', e);
     process.exit(1);
   })

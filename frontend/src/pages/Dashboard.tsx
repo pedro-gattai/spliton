@@ -102,8 +102,8 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AppHeader />
       <div className="mobile-container min-h-screen pb-20">
-        <AppHeader />
 
         {/* Main Content */}
         <div className="py-6 space-y-6">

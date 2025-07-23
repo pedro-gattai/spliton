@@ -12,7 +12,7 @@ export interface ExpenseHistory {
   settledAt: string | null;
   createdAt: string;
   group: { id: string; name: string };
-  payer: { firstName: string; lastName: string };
+  payer: { username: string };
 }
 
 export interface ExpenseHistoryOptions {
@@ -298,8 +298,7 @@ export class ExpensesService {
         },
         payer: {
           select: {
-            firstName: true,
-            lastName: true,
+            username: true,
           },
         },
         participants: {
@@ -334,8 +333,7 @@ export class ExpensesService {
           name: expense.group.name,
         },
         payer: {
-          firstName: expense.payer.firstName,
-          lastName: expense.payer.lastName || '',
+          username: expense.payer.username || 'usuário',
         },
       };
     });

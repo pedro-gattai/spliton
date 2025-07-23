@@ -71,7 +71,7 @@ export class WalletService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { tonWalletAddress: true, firstName: true, lastName: true },
+        select: { tonWalletAddress: true, username: true, email: true },
       });
 
       if (!user) {
@@ -104,8 +104,8 @@ export class WalletService {
         select: {
           id: true,
           tonWalletAddress: true,
-          firstName: true,
-          lastName: true,
+          username: true,
+          email: true,
         },
       });
 
@@ -176,8 +176,8 @@ export class WalletService {
         select: {
           id: true,
           tonWalletAddress: true,
-          firstName: true,
-          lastName: true,
+          username: true,
+          email: true,
         },
         where: {
           tonWalletAddress: {
@@ -193,7 +193,7 @@ export class WalletService {
             return {
               ...balance,
               userId: user.id,
-              userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+              userName: `@${user.username}`,
             };
           } catch (error) {
             this.logger.warn(
@@ -205,7 +205,7 @@ export class WalletService {
               balanceInTon: 0,
               lastUpdated: new Date(),
               userId: user.id,
-              userName: `${user.firstName} ${user.lastName || ''}`.trim(),
+              userName: `@${user.username}`,
               error: error.message,
             } as WalletBalance & {
               userId: string;

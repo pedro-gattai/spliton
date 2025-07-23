@@ -16,7 +16,12 @@ const userRegistrationSchema = z.object({
     .min(3, "Username deve ter pelo menos 3 caracteres")
     .max(20, "Username deve ter no máximo 20 caracteres")
     .regex(/^[a-zA-Z0-9]+$/, "Username deve conter apenas letras e números"),
-  email: z.string().email("Email inválido").optional(),
+  email: z.union([
+    z.string().email("Email inválido"),
+    z.string().length(0),
+    z.undefined()
+  ]).optional()
+  .transform(val => val === '' ? undefined : val),
 });
 
 type UserRegistrationForm = z.infer<typeof userRegistrationSchema>;
@@ -25,7 +30,7 @@ interface UserRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   walletAddress: string;
-  onUserCreated: (user: any) => void;
+  onUserCreated: (user: { id: string; username: string; email?: string; tonWalletAddress: string }) => void;
 }
 
 export const UserRegistrationModal = ({
@@ -91,6 +96,7 @@ export const UserRegistrationModal = ({
               id="walletAddress"
               value={walletAddress}
               disabled
+              className="focus:outline-none focus:ring-0 focus:border-input hover:outline-none hover:ring-0 hover:border-input active:outline-none active:ring-0 active:border-input"
             />
           </div>
           

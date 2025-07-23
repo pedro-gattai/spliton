@@ -17,7 +17,7 @@ export const WalletConnectButton = ({
         className="w-full"
         style={{
           backgroundColor: variant === 'outline' ? 'transparent' : '#0088cc',
-          border: variant === 'outline' ? '1px solid #0088cc' : 'none',
+          border: '0px solid #0088cc',
           borderRadius: '8px',
           padding: '12px 24px',
           fontSize: '16px',

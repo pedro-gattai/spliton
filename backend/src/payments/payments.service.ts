@@ -57,8 +57,8 @@ export class PaymentsService {
                 payer: {
                   select: {
                     id: true,
-                    firstName: true,
-                    lastName: true,
+                    username: true,
+                    email: true,
                     tonWalletAddress: true,
                   },
                 },
@@ -80,8 +80,7 @@ export class PaymentsService {
       // Converter para formato de dívidas
       const debts: UserDebt[] = unpaidParticipations.map(participation => ({
         to: participation.expense.payer.id,
-        toName:
-          `${participation.expense.payer.firstName} ${participation.expense.payer.lastName || ''}`.trim(),
+        toName: `@${participation.expense.payer.username}`,
         toAddress: participation.expense.payer.tonWalletAddress,
         amount: participation.amountOwed,
         expenseId: participation.expense.id,

@@ -373,12 +373,17 @@ class ApiService {
       const cleanUsername = username.toLowerCase().trim();
       console.log(`🔍 API: Verificando username "${cleanUsername}"`);
       
-      const response = await this.request<{ available: boolean; message: string }>(`/user/check-username/${encodeURIComponent(cleanUsername)}`);
+      // O backend retorna uma estrutura diferente para esta rota
+      const rawResponse = await fetch(`${API_BASE_URL}/user/check-username/${encodeURIComponent(cleanUsername)}`);
+      const response = await rawResponse.json();
       
       console.log('📊 API: Resposta da verificação:', response);
       
-      if (response && response.data !== undefined) {
-        return response.data;
+      if (response && response.success) {
+        return {
+          available: response.available,
+          message: response.message
+        };
       }
       
       return { available: false, message: 'Erro na verificação' };

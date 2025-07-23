@@ -1,4 +1,4 @@
-# Dockerfile para Backend Spliton - Railway Deploy com Migrations Automáticas
+# Dockerfile para Backend Spliton - Desenvolvimento Local
 FROM node:20-alpine
 
 # Instalar dependências necessárias para Prisma com PostgreSQL
@@ -7,14 +7,14 @@ RUN apk add --no-cache openssl bash
 # Criar diretório da aplicação
 WORKDIR /app
 
-# Copiar package.json do backend
-COPY backend/package.json ./
+# Copiar package.json
+COPY package.json ./
 
 # Instalar todas as dependências (incluindo dev dependencies para build)
 RUN npm install
 
-# Copiar código fonte do backend (incluindo prisma)
-COPY backend/ ./
+# Copiar código fonte (incluindo prisma)
+COPY . ./
 
 # Verificar estrutura de arquivos
 RUN echo "📁 Verificando estrutura:" && ls -la
@@ -52,4 +52,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Comando de inicialização com fallback (SEM SEED)
-CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy --skip-seed && node dist/src/main.js; fi"]
+CMD ["sh", "-c", "if [ -f '/app/scripts/start.sh' ]; then echo '✅ Usando script start.sh' && /app/scripts/start.sh; else echo '⚠️ Fallback: executando diretamente' && npx prisma migrate deploy && node dist/src/main.js; fi"] 

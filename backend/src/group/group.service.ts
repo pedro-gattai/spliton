@@ -31,16 +31,14 @@ export interface GroupWithMembers {
     isActive: boolean;
     user: {
       id: string;
-      firstName: string;
-      lastName: string | null;
+      username: string;
       email: string | null;
       tonWalletAddress: string;
     };
   }>;
   creator: {
     id: string;
-    firstName: string;
-    lastName: string | null;
+    username: string;
     email: string | null;
   };
 }
@@ -98,8 +96,7 @@ export class GroupService {
         creator: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            username: true,
             email: true,
           },
         },
@@ -108,8 +105,7 @@ export class GroupService {
             user: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                username: true,
                 email: true,
                 tonWalletAddress: true,
               },
@@ -173,8 +169,7 @@ export class GroupService {
         creator: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            username: true,
             email: true,
           },
         },
@@ -183,8 +178,7 @@ export class GroupService {
             user: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                username: true,
                 email: true,
                 tonWalletAddress: true,
               },
@@ -198,7 +192,7 @@ export class GroupService {
       throw new NotFoundException('Grupo não encontrado');
     }
 
-    return group;
+    return group as any;
   }
 
   /**
@@ -219,8 +213,7 @@ export class GroupService {
         creator: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            username: true,
             email: true,
           },
         },
@@ -229,8 +222,7 @@ export class GroupService {
             user: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                username: true,
                 email: true,
                 tonWalletAddress: true,
               },
@@ -240,7 +232,7 @@ export class GroupService {
       },
     });
 
-    return groups;
+    return groups as any;
   }
 
   /**

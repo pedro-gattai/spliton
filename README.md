@@ -1,134 +1,372 @@
 <img src=".assets/spliton-logo.png"> </img>
-# Spliton 
-Hack-a-TON 
+# SplitOn 
+**Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
+
 <img src=".assets/clientRoadMap.png"> </img>
 
-## Features
+## 🎯 Sobre o Projeto
 
-- Cadastro e autenticação de usuários (login via carteira TON)
-- Criação e gerenciamento de grupos de despesas
-- Adição de despesas compartilhadas com divisão automática
-- Visualização de saldos individuais e totais
-- Pagamentos diretos em TON ou tokens suportados (on-chain)
-- Notificações de despesas, cobranças e pagamentos
-- Histórico de transações e despesas
-- Exportação de relatórios (PDF, CSV) -> nice to have (P3)
-- Integração com QR Code para pagamentos -> nice to have (P2)
-- Sistema de comentários ou anexos em despesas -> nice to have (P1)
-- Interface web/mobile responsiva
-- **Bot do Telegram** para acesso rápido ao aplicativo
+SplitOn é uma aplicação descentralizada para divisão de despesas construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
 
-## Project Structure
+## ✨ Features Principais
 
-This is a monorepo containing:
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS + Shadcn/ui
-- **Backend**: NestJS + TypeScript
-- **Smart Contracts**: TON blockchain contracts (Tact)
-- **Telegram Bot**: Python bot para acesso rápido ao app
+- 🔐 **Autenticação via carteira TON** - Login seguro e descentralizado
+- 👥 **Gerenciamento de grupos** - Crie e gerencie grupos de despesas
+- 💰 **Divisão automática** - Calcule automaticamente quem deve quanto
+- 🏦 **Pagamentos on-chain** - Transações diretas em TON
+- 📱 **Interface responsiva** - Funciona em desktop e mobile
+- 🤖 **Bot do Telegram** - Acesso rápido via Telegram
+- 📊 **Histórico completo** - Visualize todas as transações
+- ⚡ **Notificações** - Receba alertas de despesas e pagamentos
 
-## Step-by-step guide
+## 🏗️ Arquitetura do Projeto
 
-### Prerequisites
-- Node.js >= 18.0.0
-- npm >= 8.0.0
-- Python 3.11+ (para o bot do Telegram)
-- Install the Tact Language extension in your IDE (e.g., VSCode)
+### **Stack Tecnológica**
 
-### Setup
+#### **Frontend**
+- **React 18** + **TypeScript** - Interface moderna e tipada
+- **Vite** - Build tool rápido
+- **Tailwind CSS** - Estilização utilitária
+- **Radix UI** - Componentes acessíveis
+- **React Router** - Navegação SPA
+- **TanStack Query** - Gerenciamento de estado do servidor
 
-1. **Install all dependencies:**
+#### **Backend**
+- **NestJS** - Framework Node.js robusto
+- **Prisma ORM** - Banco de dados type-safe
+- **PostgreSQL** - Banco de dados relacional
+- **JWT** - Autenticação
+- **Class Validator** - Validação de dados
+
+#### **Blockchain**
+- **TON Connect** - Integração com carteiras TON
+- **Tact** - Smart contracts (futuro)
+- **TON API** - Interação com blockchain
+
+#### **Infraestrutura**
+- **Docker** - Containerização
+- **Railway** - Deploy automático
+- **Cloudflare Pages** - Frontend hosting
+- **PostgreSQL** - Banco de dados na nuvem
+
+### **Estrutura de Pastas**
+
+```
+spliton/
+├── 📁 frontend/                 # Aplicação React
+│   ├── 📁 src/
+│   │   ├── 📁 components/       # Componentes React
+│   │   │   ├── 📁 modals/       # Modais (criar grupo, despesa, etc.)
+│   │   │   └── 📁 ui/           # Componentes base (Radix UI)
+│   │   ├── 📁 hooks/            # Custom hooks
+│   │   ├── 📁 pages/            # Páginas da aplicação
+│   │   ├── 📁 lib/              # Utilitários e API
+│   │   └── 📁 config/           # Configurações (TON Connect)
+│   ├── 📁 public/               # Assets estáticos
+│   └── 📄 package.json
+│
+├── 📁 backend/                  # API NestJS
+│   ├── 📁 src/
+│   │   ├── 📁 user/             # Módulo de usuários
+│   │   ├── 📁 group/            # Módulo de grupos
+│   │   ├── 📁 expenses/         # Módulo de despesas
+│   │   ├── 📁 payments/         # Módulo de pagamentos
+│   │   ├── 📁 wallet/           # Módulo de carteira
+│   │   └── 📁 prisma/           # Configuração do banco
+│   ├── 📁 prisma/
+│   │   ├── 📁 migrations/       # Migrações do banco
+│   │   └── 📄 schema.prisma     # Schema do banco
+│   └── 📄 package.json
+│
+├── 📁 telegramBot/              # Bot do Telegram
+│   ├── 📄 bot.py                # Lógica do bot
+│   └── 📄 requirements.txt
+│
+├── 📁 contract/                 # Smart contracts (futuro)
+│   ├── 📁 contracts/
+│   └── 📄 package.json
+│
+├── 📁 scripts/                  # Scripts de desenvolvimento
+│   └── 📄 dev-local.sh          # Script para desenvolvimento local
+│
+├── 📄 docker-compose.yml        # Configuração Docker local
+├── 📄 backend.toml              # Configuração Railway
+└── 📄 README.md
+```
+
+## 🚀 Como Executar Localmente
+
+### **Pré-requisitos**
+- Docker Desktop instalado e rodando
+- Node.js 18+ (para desenvolvimento)
+- Git
+
+### **Opção 1: Script Automático (Recomendado)**
 ```bash
-npm run install:all
+# Clone o repositório
+git clone https://github.com/seu-usuario/spliton.git
+cd spliton
+
+# Execute o script de desenvolvimento
+./scripts/dev-local.sh
 ```
 
-2. **Start development servers:**
+### **Opção 2: Comandos Manuais**
 ```bash
-# Start both frontend and backend
-npm run dev
+# Parar containers existentes
+docker compose down
 
-# Or start them separately:
-npm run dev:frontend  # Frontend on http://localhost:5173
-npm run dev:backend   # Backend on http://localhost:3000
+# Construir e iniciar
+docker compose up -d --build
+
+# Ver logs
+docker compose logs -f backend
 ```
 
-3. **Build for production:**
+### **URLs de Acesso Local**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Banco PostgreSQL**: localhost:5432
+- **Health Check**: http://localhost:3001/health
+
+### **Comandos Úteis**
 ```bash
-npm run build
+# Ver logs em tempo real
+docker compose logs -f backend
+docker compose logs -f postgres
+
+# Reiniciar backend
+docker compose restart backend
+
+# Executar seed (dados de teste)
+docker compose exec backend npm run db:seed
+
+# Abrir Prisma Studio
+docker compose exec backend npx prisma studio
 ```
 
-### Available Scripts
+## 🌐 Deploy
 
-- `npm run dev` - Start both frontend and backend in development mode
-- `npm run dev:frontend` - Start only frontend
-- `npm run dev:backend` - Start only backend
-- `npm run build` - Build both frontend and backend
-- `npm run lint` - Lint both frontend and backend
-- `npm run test` - Run tests for both frontend and backend
+### **Railway (Backend + Banco)**
+O backend é deployado automaticamente no Railway quando há push para a branch `main`.
 
-### Smart Contracts Setup
+**Configuração:**
+- **Arquivo**: `backend.toml`
+- **Dockerfile**: `backend/Dockerfile`
+- **Banco**: PostgreSQL automático
+- **URL**: Gerada automaticamente pelo Railway
 
-For the TON smart contracts:
+### **Cloudflare Pages (Frontend)**
+O frontend é deployado automaticamente no Cloudflare Pages.
 
+**Configuração:**
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Framework**: Vite
+
+### **Telegram Bot**
+O bot do Telegram é deployado separadamente no Railway.
+
+**Configuração:**
+- **Arquivo**: `telegram-bot.toml`
+- **Dockerfile**: `telegramBot/Dockerfile`
+
+## 🔧 Desenvolvimento
+
+### **Estrutura de Dockerfiles**
+
+#### **Railway (Produção)**
+- **Arquivo**: `backend/Dockerfile`
+- **Contexto**: Raiz do projeto
+- **Comando**: `COPY backend/ ./`
+- **Seed**: Desabilitado (`--skip-seed`)
+
+#### **Desenvolvimento Local**
+- **Arquivo**: `backend/Dockerfile.local`
+- **Contexto**: Pasta `backend/`
+- **Comando**: `COPY . ./`
+- **Seed**: Habilitado (opcional)
+
+### **Banco de Dados**
+
+#### **Schema Principal**
+```prisma
+model User {
+  id                String   @id @default(uuid())
+  telegramId        BigInt   @unique
+  username          String   @unique
+  email             String?  @unique
+  tonWalletAddress  String
+  // ... relações
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdBy   String
+  inviteCode  String   @unique
+  // ... relações
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  groupId     String
+  payerId     String
+  description String?
+  amount      Float
+  category    String?
+  // ... relações
+}
+```
+
+#### **Migrations**
 ```bash
-cd simple-counter
-yarn create ton simple-counter --type tact-counter --contractName SimpleCounter
+# Criar nova migration
+npx prisma migrate dev --name nome_da_migration
+
+# Aplicar migrations em produção
+npx prisma migrate deploy
+
+# Resetar banco (desenvolvimento)
+npx prisma migrate reset
 ```
 
-## Deploy
+### **API Endpoints**
 
-### Backend (Railway)
+#### **Usuários**
+- `POST /user` - Criar usuário
+- `GET /user/search` - Buscar usuários
+- `GET /user/:id` - Obter usuário
 
-O backend já está configurado para deploy no Railway. Veja o arquivo `railway.toml` para configurações.
+#### **Grupos**
+- `POST /group` - Criar grupo
+- `GET /group` - Listar grupos do usuário
+- `GET /group/:id` - Obter detalhes do grupo
 
-### Frontend (Cloudflare Pages)
+#### **Despesas**
+- `POST /expenses` - Criar despesa
+- `GET /expenses` - Listar despesas
+- `GET /expenses/:id` - Obter detalhes da despesa
 
-O frontend está configurado para deploy no Cloudflare Pages.
+#### **Pagamentos**
+- `POST /payments/calculate` - Calcular liquidações
+- `POST /payments/execute` - Executar pagamentos
 
-### Bot do Telegram (Railway)
+## 🔐 Autenticação
 
-#### Passo a Passo para Deploy do Bot:
+### **TON Connect**
+- Integração com carteiras TON
+- Login descentralizado
+- Assinatura de transações
 
-1. **Criar novo projeto no Railway:**
-   - Acesse [railway.app](https://railway.app)
-   - Clique em "New Project"
-   - Selecione "Deploy from GitHub repo"
-   - Conecte seu repositório GitHub
+### **JWT Tokens**
+- Tokens de sessão
+- Refresh automático
+- Validação de permissões
 
-2. **Configurar o projeto:**
-   - Selecione a pasta `telegramBot` como diretório raiz
-   - O Railway detectará automaticamente o Dockerfile
+## 📱 Frontend
 
-3. **Configurar variáveis de ambiente:**
-   - Vá em "Variables" no projeto
-   - Adicione a variável:
-     - `BOT_TOKEN`: Seu token do bot (obtido no @BotFather)
+### **Componentes Principais**
+- **AppHeader** - Header da aplicação
+- **BottomNavigation** - Navegação mobile
+- **NewGroupModal** - Criar grupo
+- **NewExpenseModal** - Criar despesa
+- **ParticipantSelector** - Selecionar participantes
+- **SettlementButton** - Executar pagamentos
 
-4. **Deploy:**
-   - O Railway fará o deploy automaticamente
-   - Monitore os logs para verificar se o bot iniciou corretamente
+### **Hooks Customizados**
+- **useWalletConnection** - Conexão com carteira
+- **useGroups** - Gerenciamento de grupos
+- **useExpenses** - Gerenciamento de despesas
+- **useSettlements** - Cálculo de liquidações
 
-#### Comandos do Bot:
+## 🤖 Telegram Bot
 
-- `/start` - Mensagem de boas-vindas com botão para o app
-- `/help` - Instruções de uso
+### **Funcionalidades**
+- Acesso rápido ao aplicativo
+- Notificações de despesas
+- Comandos básicos de consulta
 
-#### Desenvolvimento Local do Bot:
+### **Deploy**
+- Railway com Python
+- Webhook para Telegram
+- Integração com backend
 
+## 🧪 Testes
+
+### **Backend**
 ```bash
-cd telegramBot
-pip install -r requirements.txt
-cp env.example .env
-# Edite o .env com seu BOT_TOKEN
-python bot.py
+# Testes unitários
+npm run test
+
+# Testes e2e
+npm run test:e2e
+
+# Cobertura
+npm run test:cov
 ```
 
-### Estrutura de Deploy:
-
+### **Frontend**
+```bash
+# Testes (quando implementados)
+npm run test
 ```
-Railway (Backend + Bot)
-├── Backend (NestJS) - Porta 3000
-└── Bot Telegram (Python) - Container separado
 
-Cloudflare Pages (Frontend)
-└── React App - Porta 5173
+## 📊 Monitoramento
+
+### **Health Checks**
+- `GET /health` - Status geral
+- `GET /health/db` - Status do banco
+
+### **Logs**
+- Logs estruturados
+- Níveis de log configuráveis
+- Integração com Railway
+
+## 🔧 Troubleshooting
+
+### **Problemas Comuns**
+
+#### **Porta 3000/5432 já em uso**
+```bash
+# Parar processos
+lsof -ti:3000 | xargs kill -9
+lsof -ti:5432 | xargs kill -9
 ```
+
+#### **Containers não iniciam**
+```bash
+# Limpar tudo
+docker compose down -v
+docker system prune -f
+./scripts/dev-local.sh
+```
+
+#### **Erro de migrations**
+```bash
+# Resetar banco
+docker compose exec backend npx prisma migrate reset
+```
+
+## 📝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 🆘 Suporte
+
+- **Issues**: [GitHub Issues](https://github.com/seu-usuario/spliton/issues)
+- **Documentação**: Este README
+- **Telegram**: [@spliton_bot](https://t.me/spliton_bot)
+
+---
+
+**SplitOn** - Divisão inteligente de despesas na blockchain TON 🚀

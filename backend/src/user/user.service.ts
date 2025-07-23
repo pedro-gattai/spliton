@@ -87,12 +87,12 @@ export class UserService {
           tonWalletAddress: createUserDto.tonWalletAddress,
           username: createUserDto.username.toLowerCase(),
           email: createUserDto.email?.toLowerCase(),
-        },
+        } as any,
       });
 
       this.logger.log(`Usuário criado com sucesso: ${user.id}`);
 
-      return this.mapUserToResponse(user);
+      return this.mapUserToResponse(user as any);
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`);
       if (error instanceof ConflictException) {
@@ -221,13 +221,13 @@ export class UserService {
             where: {
               OR: [
                 {
-                  firstName: {
+                  username: {
                     contains: cleanIdentifier,
                     mode: 'insensitive',
                   },
                 },
                 {
-                  lastName: {
+                  email: {
                     contains: cleanIdentifier,
                     mode: 'insensitive',
                   },
@@ -286,13 +286,13 @@ export class UserService {
               },
             },
             {
-              firstName: {
+              username: {
                 contains: cleanQuery,
                 mode: 'insensitive',
               },
             },
             {
-              lastName: {
+              email: {
                 contains: cleanQuery,
                 mode: 'insensitive',
               },
@@ -306,7 +306,7 @@ export class UserService {
           ],
         },
         take: limit,
-        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+        orderBy: [{ username: 'asc' }],
       });
 
       this.logger.log(`✅ Encontrados ${users.length} usuários`);
