@@ -1,5 +1,4 @@
-<img src="./assets/spliton-logo.png"> </img>
-# SplitOn 
+# SplitOn
 **Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
 
 <img src="./assets/clientRoadMap.png"> </img>
@@ -12,11 +11,9 @@ SplitOn é uma aplicação descentralizada para divisão de despesas de maneira 
 
 Inicie uma conversa com o bot no Telegram:
 ```
-@SplitOn_ton_bot
+https://t.me/splitOn_ton_bot
 ```
-
 ou
-
 Acesse a interface web:
 ```
 https://spliton.pages.dev
