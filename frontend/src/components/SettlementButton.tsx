@@ -14,7 +14,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Calculator, 
-  ChevronRight, 
   AlertCircle, 
   CheckCircle, 
   Wallet,
@@ -24,16 +23,21 @@ import {
 } from 'lucide-react';
 import { useSettlements } from '../hooks/useSettlements';
 
+interface Settlement {
+  from: string;
+  to: string;
+  amount: number;
+  fromName: string;
+  toName: string;
+  fromAddress?: string;
+  toAddress?: string;
+  participantId?: string;
+  expenseId?: string;
+  expenseDescription?: string;
+}
+
 interface SettlementsData {
-  settlements: Array<{
-    from: string;
-    to: string;
-    amount: number;
-    fromName: string;
-    toName: string;
-    fromAddress?: string;
-    toAddress?: string;
-  }>;
+  settlements: Settlement[];
   totalAmount: number;
   settlementsCount: number;
   optimizationSaved?: number;
@@ -59,10 +63,12 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     settlements,
     isCalculating,
     isExecuting,
+    isPayingIndividual,
     error,
-    isConnected,
+    connected,
     calculateSettlements,
-    executeSettlements,
+    executeAllSettlements,
+    executeIndividualSettlement,
     clearSettlements,
     hasSettlements,
     totalAmount,
@@ -70,15 +76,10 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
   } = useSettlements(
     groupId,
     (result: SettlementsData) => {
-      setSuccess(true);
-      onSettlementComplete?.();
-      setTimeout(() => {
-        setIsOpen(false);
-        setSuccess(false);
-      }, 2500);
+      console.log('Dívidas carregadas:', result);
     },
     (error: string) => {
-      console.error('Settlement error:', error);
+      console.error('Erro no settlement:', error);
     }
   );
 
@@ -89,8 +90,32 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     calculateSettlements();
   };
 
-  const formatTON = (amount: number) => {
-    return (amount / 1e9).toFixed(4);
+  const handlePayAll = async () => {
+    const result = await executeAllSettlements();
+    if (result) {
+      setSuccess(true);
+      onSettlementComplete?.();
+      setTimeout(() => {
+        if (settlements.length === 0) {
+          setIsOpen(false);
+          setSuccess(false);
+        }
+      }, 2000);
+    }
+  };
+
+  const handlePayIndividual = async (settlement: Settlement) => {
+    const result = await executeIndividualSettlement(settlement);
+    if (result) {
+      if (settlements.length === 0) {
+        setSuccess(true);
+        onSettlementComplete?.();
+        setTimeout(() => {
+          setIsOpen(false);
+          setSuccess(false);
+        }, 2000);
+      }
+    }
   };
 
   const getButtonText = () => {
@@ -104,39 +129,40 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
+          type="button"
           variant="default"
           className={`gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 ${className}`}
           onClick={handleOpenDialog}
-          disabled={!isConnected}
+          disabled={!connected}
         >
           <Calculator className="h-4 w-4" />
           {getButtonText()}
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
               <TrendingUp className="h-5 w-5 text-blue-600" />
             </div>
-            Settlement de Dívidas
+            Resolver Dívidas
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {groupId && groupName
-              ? `Liquidar dívidas do grupo "${groupName}" de forma otimizada`
-              : 'Algoritmo inteligente para otimizar pagamentos e liquidar todas as dívidas'
+              ? `Liquidar suas dívidas do grupo "${groupName}"`
+              : 'Visualize e pague suas dívidas pendentes'
             }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Status da Carteira */}
-          {!isConnected && (
+          {!connected && (
             <Alert className="border-amber-200 bg-amber-50">
               <Wallet className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
-                Conecte sua carteira TON para executar settlements
+                Conecte sua carteira TON para fazer pagamentos
               </AlertDescription>
             </Alert>
           )}
@@ -154,7 +180,7 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                ✨ Settlement executado com sucesso! As transações foram processadas na blockchain TON.
+                ✨ Pagamento(s) realizado(s) com sucesso!
               </AlertDescription>
             </Alert>
           )}
@@ -165,8 +191,7 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
               <CardContent className="flex items-center justify-center py-8">
                 <div className="text-center space-y-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-sm text-gray-600">Calculando settlements otimizados...</p>
-                  <p className="text-xs text-gray-500">Analisando o grafo de dívidas</p>
+                  <p className="text-sm text-gray-600">Carregando suas dívidas...</p>
                 </div>
               </CardContent>
             </Card>
@@ -180,52 +205,102 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">
-                    Pagamentos necessários ({settlementsCount})
+                    Suas dívidas ({settlementsCount})
                   </span>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  Otimizado
+                  Total: {totalAmount.toFixed(2)} TON
                 </Badge>
               </div>
               
-              {/* Settlements */}
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              {/* Individual Debts */}
+              <div className="space-y-3 max-h-80 overflow-y-auto">
                 {settlements.map((settlement, index) => (
-                  <Card key={index} className="transition-colors hover:bg-gray-50">
-                    <CardContent className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm">
-                          <div className="font-medium text-gray-900">
-                            {settlement.fromName}
+                  <Card key={settlement.participantId || index} className="transition-colors hover:bg-gray-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="text-sm font-medium text-gray-900">
+                              Pagar para: {settlement.toName}
+                            </div>
+                            <Badge variant="secondary" className="text-xs">
+                              {settlement.amount.toFixed(2)} TON
+                            </Badge>
                           </div>
                           <div className="text-xs text-gray-500">
-                            paga para {settlement.toName}
+                            Despesa: {settlement.expenseDescription || 'Sem descrição'}
                           </div>
+                          {settlement.toAddress && (
+                            <div className="text-xs text-gray-400 font-mono mt-1">
+                              {settlement.toAddress.slice(0, 8)}...{settlement.toAddress.slice(-6)}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-mono text-xs">
-                          {formatTON(settlement.amount)} TON
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handlePayIndividual(settlement)}
+                          disabled={!connected || isPayingIndividual === settlement.participantId}
+                          className="ml-3 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {isPayingIndividual === settlement.participantId ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                              Pagando...
+                            </>
+                          ) : (
+                            <>
+                              <Wallet className="w-3 h-3 mr-1" />
+                              Pagar
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              
-              {/* Summary */}
-              <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
+
+              {/* Summary and Pay All Button */}
+              <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">Total a transferir:</span>
-                    <Badge variant="outline" className="font-mono text-sm">
-                      {formatTON(totalAmount)} TON
-                    </Badge>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">
+                        Total a pagar
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        {settlementsCount} dívida{settlementsCount !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-blue-900">
+                          {totalAmount.toFixed(2)} TON
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handlePayAll}
+                        disabled={!connected || isExecuting}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isExecuting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Pagando Tudo...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Pagar Tudo
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Em {settlementsCount} transação{settlementsCount > 1 ? 'ões' : ''}
-                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -234,48 +309,30 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
           {/* No Settlements */}
           {!hasSettlements && !isCalculating && !error && (
             <Card>
-              <CardContent className="text-center py-8">
-                <div className="text-4xl mb-3">🎉</div>
-                <p className="font-medium text-gray-900 mb-1">
-                  Nenhuma dívida para resolver!
-                </p>
-                <p className="text-sm text-gray-500">
-                  Todas as contas estão quitadas
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mb-3" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhuma dívida pendente!
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {groupId && groupName
+                    ? `Você não tem dívidas pendentes no grupo "${groupName}".`
+                    : 'Você não tem dívidas pendentes no momento.'
+                  }
                 </p>
               </CardContent>
             </Card>
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-3">
+        <DialogFooter>
           <Button 
+            type="button"
             variant="outline" 
             onClick={() => setIsOpen(false)}
-            disabled={isExecuting}
-            className="flex-1"
           >
-            Cancelar
+            Fechar
           </Button>
-          
-          {hasSettlements && !success && isConnected && (
-            <Button 
-              onClick={executeSettlements}
-              disabled={isExecuting}
-              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white gap-2"
-            >
-              {isExecuting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Executando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Executar Settlement
-                </>
-              )}
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
