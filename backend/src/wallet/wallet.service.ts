@@ -17,7 +17,8 @@ export interface TonApiResponse {
 @Injectable()
 export class WalletService {
   private readonly logger = new Logger(WalletService.name);
-  private readonly tonApiBaseUrl = 'https://toncenter.com/api/v2';
+  private readonly tonApiBaseUrl =
+    process.env.TON_API_BASE_URL || 'https://toncenter.com/api/v2';
 
   constructor(private prisma: PrismaService) {}
 

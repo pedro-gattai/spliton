@@ -14,11 +14,14 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { NewExpenseModal } from "@/components/modals/NewExpenseModal";
 import { NewGroupModal } from "@/components/modals/NewGroupModal";
 import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal";
+import { SettlementButton } from "@/components/SettlementButton";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { useGroups } from "@/hooks/useGroups";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useUserStats } from "@/hooks/useUserStats";
+import { useGroupBalances } from "@/hooks/useGroupBalances";
 
 // Types for form data
 type ExpenseFormData = {
@@ -74,6 +77,13 @@ export const Dashboard = () => {
   const { groups, createGroup } = useGroups(user?.id);
   const { createExpense } = useExpenses();
 
+  // Hooks para buscar dados de estatísticas e balanços
+  const { stats: userStats, loading: statsLoading } = useUserStats(user?.id);
+  
+  // Para balances dos grupos
+  const groupIds = groups.map(group => group.id);
+  const { balances, loading: balancesLoading } = useGroupBalances(user?.id, groupIds);
+
   const handleExpenseSubmit = async (data: any) => {
     try {
       await createExpense(data);
@@ -117,14 +127,14 @@ export const Dashboard = () => {
                   <DollarSign className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">Saldo da Carteira</span>
                 </div>
-                              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                )}
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
-                </Badge>
-              </div>
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  )}
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    {!connected ? 'Desconectado' : error ? 'Erro' : walletBalance ? 'Conectado' : 'Carregando...'}
+                  </Badge>
+                </div>
               </div>
               
               {!connected ? (
@@ -169,7 +179,9 @@ export const Dashboard = () => {
                   <TrendingUp className="w-4 h-4 mr-2 text-success" />
                   <span className="text-sm text-muted-foreground">Você recebe</span>
                 </div>
-                <div className="text-lg font-semibold text-success">0.00 TON</div>
+                <div className="text-lg font-semibold text-success">
+                  {statsLoading ? 'Carregando...' : userStats ? `${userStats.totalToReceive.toFixed(2)} TON` : '0.00 TON'}
+                </div>
               </Card>
 
               <Card className="p-4">
@@ -177,11 +189,23 @@ export const Dashboard = () => {
                   <TrendingDown className="w-4 h-4 mr-2 text-destructive" />
                   <span className="text-sm text-muted-foreground">Você deve</span>
                 </div>
-                <div className="text-lg font-semibold text-destructive">0.00 TON</div>
+                <div className="text-lg font-semibold text-destructive">
+                  {statsLoading ? 'Carregando...' : userStats ? `${userStats.totalOwed.toFixed(2)} TON` : '0.00 TON'}
+                </div>
               </Card>
             </div>
           </div>
-
+          {/* Settlement Button */}
+              <div className="col-span-2">
+                <SettlementButton 
+                  onSettlementComplete={() => {
+                    refetch();
+                    // Refetch groups and expenses after settlement
+                    window.location.reload();
+                  }}
+                  className="w-full h-16 text-lg"
+                />
+              </div>
           {/* Grupos */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Seus Grupos</h2>
