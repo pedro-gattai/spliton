@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Criar arquivo .env vazio (será preenchido pelo Railway)
 RUN touch .env
 
-# Expor porta (opcional, para healthcheck)
+# Expor porta (opcional)
 EXPOSE 8000
 
 # Comando para iniciar o bot
