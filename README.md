@@ -1,8 +1,6 @@
 # SplitOn
 **Hack-a-TON - Divisão Inteligente de Despesas na Blockchain TON**
 
-<img src="./assets/clientRoadMap.png"> </img>
-
 ## 🎯 Sobre o Projeto
 
 SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
@@ -19,7 +17,9 @@ Acesse a interface web:
 https://spliton.pages.dev
 ```
 
+## 😀 Fluxo de uso
 
+<img src="./assets/clientRoadMap.png"> </img>
 
 ## ✨ Features Principais
 
