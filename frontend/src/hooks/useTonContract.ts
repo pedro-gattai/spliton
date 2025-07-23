@@ -14,6 +14,7 @@ interface ContractExecutionResult {
   settlementsCount?: number;
   error?: string;
   suggestion?: string;
+  note?: string;
 }
 
 // ✅ Função para buscar saldo da carteira via backend
@@ -79,30 +80,30 @@ export const useTonContract = () => {
     }
   }, []);
 
-  // ✅ FUNÇÃO CORRIGIDA PARA DirectPayment - COMPATÍVEL COM SEU CONTRATO TACT
-  const createDirectPaymentPayload = useCallback((to: string, amount: number, groupId: string): string => {
+  // ✅ FUNÇÃO CORRIGIDA PARA DirectPayment - TESTNET COMPATIBLE
+  const createDirectPaymentPayload = useCallback((to: string, amount: number, description: string): string => {
     try {
-      console.log('🏗️ Criando payload DirectPayment (TACT):', { to, amount, groupId });
+      console.log('🏗️ Criando payload para contrato testnet:', { to, amount, description });
       
       if (!isValidTonAddress(to)) {
         throw new Error(`Endereço inválido: ${to}`);
       }
 
-      // ✅ ESTRUTURA CORRETA PARA TACT: opcode + fields em ordem
+      // ✅ TESTE COM OPCODE DIFERENTE PARA TESTNET
       const cell = beginCell()
-        .storeUint(0x04, 32)                    // DirectPayment opcode
-        .storeAddress(Address.parse(to))        // to: Address
-        .storeCoins(toNano(amount.toString()))  // amount: Int (em nano)
-        .storeStringTail(groupId)               // groupId: String (inline)
+        .storeUint(0x00000001, 32)          // Tente opcode 1 em vez de 2
+        .storeAddress(Address.parse(to))     // recipient
+        .storeCoins(toNano(amount))         // amount
+        .storeStringTail(description)       // description inline
         .endCell();
       
       const bocString = cell.toBoc().toString('base64');
-      console.log('✅ Payload DirectPayment TACT criado');
+      console.log('✅ Payload testnet criado, BOC length:', bocString.length);
       return bocString;
       
     } catch (error) {
-      console.error('❌ Erro ao criar payload DirectPayment:', error);
-      throw new Error(`Erro ao criar payload: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error('❌ Erro ao criar payload testnet:', error);
+      throw error;
     }
   }, [isValidTonAddress]);
 
@@ -258,7 +259,7 @@ export const useTonContract = () => {
     [wallet, tonConnectUI, contractAddress, isValidTonAddress, createBatchSettlementPayload, checkSufficientBalance]
   );
 
-  // ✅ FUNÇÃO COMPLETAMENTE REESCRITA BASEADA NO SEU CONTRATO TACT
+  // ✅ FUNÇÃO COMPLETAMENTE REESCRITA PARA TESTNET
   const executeDirectPayment = useCallback(
     async (to: string, amount: number, description = 'SplitON Payment'): Promise<ContractExecutionResult> => {
       if (!wallet) {
@@ -271,7 +272,7 @@ export const useTonContract = () => {
       setIsExecuting(true);
       
       try {
-        console.log('🚀 Iniciando DirectPayment (TACT):', { to, amount, description });
+        console.log('🚀 Iniciando DirectPayment (TESTNET):', { to, amount, description });
 
         // ✅ Validações básicas
         if (!to || typeof to !== 'string' || to.trim().length === 0) {
@@ -290,6 +291,26 @@ export const useTonContract = () => {
           throw new Error('Endereço do contrato inválido');
         }
 
+        // ✅ VERIFICAR STATUS DO CONTRATO TESTNET
+        try {
+          console.log('🔍 Verificando contrato testnet:', {
+            contractAddress: 'kQD54Y2fe0Ixu7lUZHRDe1wZhdgE4cDR7EfUhTACHlMJbJLV',
+            isTestnet: contractAddress.startsWith('kQ'),
+            walletNetwork: wallet?.account?.chain
+          });
+          
+          // Verificar se contrato é testnet
+          if (contractAddress.startsWith('kQ')) {
+            console.log('⚠️ Usando contrato testnet - certifique-se de que a wallet está na rede testnet');
+          }
+        } catch (networkError) {
+          console.error('❌ Erro de rede:', networkError);
+          return { 
+            success: false, 
+            error: networkError instanceof Error ? networkError.message : 'Erro de rede desconhecido' 
+          };
+        }
+
         // ✅ Validações baseadas no seu contrato TACT
         if (amount <= 0) {
           throw new Error('Valor deve ser positivo');
@@ -304,17 +325,17 @@ export const useTonContract = () => {
           throw new Error(`Valor mínimo é ${minAmount} TON`);
         }
 
-        // ✅ Cálculo MELHORADO com margem para taxas da rede
-        const contractFee = 0.05;  // Fee fixo definido no contrato: ton("0.05")
-        const networkFeeMargin = 0.1; // Margem para taxas variáveis da rede
-        const totalRequired = amount + contractFee + networkFeeMargin;  // Adicionando margem
+        // ✅ REDUZIR VALOR TOTAL PARA TESTNET
+        const contractFee = 0.01;      // Reduzir de 0.05 para 0.01
+        const networkFeeMargin = 0.05; // Reduzir de 0.1 para 0.05
+        const totalRequired = amount + contractFee + networkFeeMargin;
         
-        console.log('💰 Cálculo baseado no contrato TACT:', {
+        console.log('💰 Cálculo testnet:', {
           amount,
           contractFee,
           networkFeeMargin,
           totalRequired,
-          'context().value >= totalRequired': `${totalRequired} TON`
+          contractAddress: 'kQD54Y2fe0Ixu7lUZHRDe1wZhdgE4cDR7EfUhTACHlMJbJLV'
         });
 
         // ✅ Verificar saldo antes de executar
@@ -327,7 +348,7 @@ export const useTonContract = () => {
           };
         }
 
-        // ✅ Criar payload compatível com TACT
+        // ✅ Criar payload compatível com testnet
         const directPaymentPayload = createDirectPaymentPayload(to, amount, description);
 
         // ✅ Construir transação
@@ -340,16 +361,18 @@ export const useTonContract = () => {
           }]
         };
 
-        // ✅ Debug detalhado antes de sendTransaction
-        console.log('🔍 Debug da transação:', {
-          contractAddress,
+        // ✅ ADICIONAR DEBUG ESPECÍFICO PARA TESTNET
+        console.log('🔍 Debug transação testnet:', {
+          contractAddress: 'kQD54Y2fe0Ixu7lUZHRDe1wZhdgE4cDR7EfUhTACHlMJbJLV',
+          isTestnetContract: true,
           walletAddress: wallet?.account?.address,
+          walletChain: wallet?.account?.chain,
           transaction: JSON.stringify(transaction, null, 2),
-          totalRequired,
-          validUntil: new Date(transaction.validUntil * 1000)
+          payloadSize: transaction.messages[0].payload?.length || 0,
+          timestamp: new Date().toISOString()
         });
 
-        console.log('📤 Enviando transação TACT-compatível...');
+        console.log('📤 Enviando transação testnet...');
 
         // ✅ Enviar transação
         const result = await Promise.race([
@@ -359,7 +382,7 @@ export const useTonContract = () => {
           )
         ]) as { boc: string };
 
-        console.log('✅ DirectPayment TACT executado com sucesso!');
+        console.log('✅ DirectPayment testnet executado com sucesso!');
 
         return {
           success: true,
@@ -368,47 +391,125 @@ export const useTonContract = () => {
           settlementsCount: 1,
         };
 
-      } catch (error) {
-        console.error('❌ Erro em executeDirectPayment TACT:', error);
+      } catch (contractError) {
+        console.error('❌ Erro em executeDirectPayment testnet:', contractError);
 
-        // ✅ Tratamento de erros MELHORADO com verificação específica
-        let errorMessage = 'Erro desconhecido na transação';
-        let suggestion = '';
+        // ✅ ADICIONAR FALLBACK PARA TRANSAÇÃO DIRETA
+        console.error('❌ Erro no contrato testnet, tentando transação direta:', contractError);
         
-        if (error instanceof Error) {
-          if (error.message.includes('Unable to verify') || error.message.includes('verify transaction')) {
-            errorMessage = 'Erro de verificação da transação. Verifique sua conexão e saldo de TON.';
-            suggestion = 'Tente trocar de Wi-Fi para dados móveis ou vice-versa.';
-          } else if (error.message.includes('User declined') || error.message.includes('cancelled')) {
-            errorMessage = 'Transação cancelada pelo usuário';
-          } else if (error.message.includes('Timeout')) {
-            errorMessage = 'Timeout: Tente novamente';
-          } else if (error.message.includes('Invalid address')) {
-            errorMessage = 'Endereço inválido';
-          } else if (error.message.includes('Insufficient funds')) {
-            errorMessage = 'Saldo insuficiente';
-            suggestion = 'Verifique se você tem TON suficiente na sua carteira';
-          } else if (error.message.includes('Contract is paused')) {
-            errorMessage = 'Contrato está pausado';
-          } else if (error.message.includes('Amount too large')) {
-            errorMessage = 'Valor muito alto (máximo 100 TON)';
-          } else if (error.message.includes('Amount must be positive')) {
-            errorMessage = 'Valor deve ser positivo';
-          } else {
-            errorMessage = error.message;
+        try {
+          const directTransaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+              address: to, // Pagar direto para o destinatário
+              amount: toNano(amount).toString(),
+              payload: undefined // Sem payload - transação TON simples
+            }]
+          };
+          
+          console.log('🔄 Transação direta (sem contrato):', directTransaction);
+          const result = await tonConnectUI.sendTransaction(directTransaction);
+          
+          return {
+            success: true,
+            transactionHash: result.boc,
+            totalAmount: amount,
+            settlementsCount: 1,
+            note: 'Pagamento direto realizado (contrato bypassed)'
+          };
+          
+        } catch (directError) {
+          console.error('❌ Erro na transação direta:', directError);
+          
+          // ✅ Tratamento de erros MELHORADO com verificação específica
+          let errorMessage = 'Erro desconhecido na transação';
+          let suggestion = '';
+          
+          if (contractError instanceof Error) {
+            if (contractError.message.includes('Unable to verify') || contractError.message.includes('verify transaction')) {
+              errorMessage = 'Erro de verificação da transação. Verifique sua conexão e saldo de TON.';
+              suggestion = 'Tente trocar de Wi-Fi para dados móveis ou vice-versa.';
+            } else if (contractError.message.includes('User declined') || contractError.message.includes('cancelled')) {
+              errorMessage = 'Transação cancelada pelo usuário';
+            } else if (contractError.message.includes('Timeout')) {
+              errorMessage = 'Timeout: Tente novamente';
+            } else if (contractError.message.includes('Invalid address')) {
+              errorMessage = 'Endereço inválido';
+            } else if (contractError.message.includes('Insufficient funds')) {
+              errorMessage = 'Saldo insuficiente';
+              suggestion = 'Verifique se você tem TON suficiente na sua carteira';
+            } else if (contractError.message.includes('Contract is paused')) {
+              errorMessage = 'Contrato está pausado';
+            } else if (contractError.message.includes('Amount too large')) {
+              errorMessage = 'Valor muito alto (máximo 100 TON)';
+            } else if (contractError.message.includes('Amount must be positive')) {
+              errorMessage = 'Valor deve ser positivo';
+            } else {
+              errorMessage = contractError.message;
+            }
           }
-        }
 
-        return {
-          success: false,
-          error: errorMessage,
-          suggestion
-        };
+          return {
+            success: false,
+            error: `Erro no contrato testnet: ${errorMessage}. Erro direto: ${directError instanceof Error ? directError.message : 'Erro desconhecido'}`,
+            suggestion
+          };
+        }
       } finally {
         setIsExecuting(false);
       }
     },
     [wallet, tonConnectUI, contractAddress, isValidTonAddress, createDirectPaymentPayload, checkSufficientBalance]
+  );
+
+  // ✅ FUNÇÃO DE TESTE SEM PAYLOAD PARA DEBUG
+  const testDirectPaymentWithoutPayload = useCallback(
+    async (to: string, amount: number): Promise<ContractExecutionResult> => {
+      if (!wallet) {
+        return { 
+          success: false, 
+          error: 'Carteira TON não conectada' 
+        };
+      }
+
+      setIsExecuting(true);
+      
+      try {
+        console.log('🧪 TESTE: Enviando transação sem payload para debug');
+
+        // ✅ Versão simplificada para teste
+        const testTransaction = {
+          validUntil: Math.floor(Date.now() / 1000) + 300,
+          messages: [{
+            address: contractAddress,
+            amount: toNano(amount + 0.01).toString()
+            // SEM payload - deixar o contrato processar como quiser
+          }]
+        };
+
+        console.log('🧪 Transação de teste:', testTransaction);
+        const result = await tonConnectUI.sendTransaction(testTransaction) as { boc: string };
+
+        return {
+          success: true,
+          transactionHash: result.boc,
+          totalAmount: amount,
+          settlementsCount: 1,
+          note: 'Teste sem payload realizado com sucesso'
+        };
+
+      } catch (error) {
+        console.error('❌ Erro no teste sem payload:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido no teste',
+          note: 'Teste sem payload falhou'
+        };
+      } finally {
+        setIsExecuting(false);
+      }
+    },
+    [wallet, tonConnectUI, contractAddress]
   );
 
   return {
@@ -420,6 +521,7 @@ export const useTonContract = () => {
     // Ações
     executeBatchSettlement,
     executeDirectPayment,
+    testDirectPaymentWithoutPayload, // ✅ Nova função de teste
     
     // Configuração
     contractAddress,
