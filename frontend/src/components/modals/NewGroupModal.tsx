@@ -44,9 +44,7 @@ const groupSchema = z.object({
   currency: z.string().default("TON"),
   members: z.array(z.object({
     id: z.string().min(1, "ID do usuário é obrigatório"),
-    firstName: z.string().min(1, "Nome é obrigatório"),
-    lastName: z.string().optional(),
-    username: z.string().optional(),
+    username: z.string().min(1, "Username é obrigatório"),
     tonWalletAddress: z.string().min(1, "Endereço da carteira é obrigatório"),
   })).min(1, "Adicione pelo menos um membro"),
 });
@@ -185,9 +183,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
 
     const newMember = {
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName || undefined,
-      username: user.username || undefined,
+      username: user.username,
       tonWalletAddress: user.tonWalletAddress,
     };
 
@@ -198,7 +194,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
     
     toast({
       title: "Membro adicionado",
-      description: `${user.firstName} foi adicionado ao grupo.`,
+      description: `@${user.username} foi adicionado ao grupo.`,
     });
   };
 
@@ -230,7 +226,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   };
 
   const getFullName = (member: any) => {
-    return member.lastName ? `${member.firstName} ${member.lastName}` : member.firstName;
+    return `@${member.username}`;
   };
 
   const getMemberIdentifier = (member: any) => {
@@ -242,9 +238,7 @@ export const NewGroupModal = ({ children, onSubmit, userId }: NewGroupModalProps
   };
 
   const getMemberInitials = (member: any) => {
-    const first = member.firstName.charAt(0).toUpperCase();
-    const last = member.lastName ? member.lastName.charAt(0).toUpperCase() : '';
-    return first + last;
+    return member.username.charAt(0).toUpperCase();
   };
 
   return (

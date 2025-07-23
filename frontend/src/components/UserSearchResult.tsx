@@ -8,10 +8,8 @@ interface UserSearchResultItemProps {
 }
 
 export const UserSearchResultItem = ({ user, onSelect, isSelected = false }: UserSearchResultItemProps) => {
-  const getInitials = (firstName: string, lastName?: string | null) => {
-    const first = firstName.charAt(0).toUpperCase();
-    const last = lastName ? lastName.charAt(0).toUpperCase() : '';
-    return first + last;
+  const getInitials = (username: string) => {
+    return username.charAt(0).toUpperCase();
   };
 
   const getIdentifier = () => {
@@ -37,7 +35,7 @@ export const UserSearchResultItem = ({ user, onSelect, isSelected = false }: Use
   };
 
   const getFullName = () => {
-    return user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName;
+    return `@${user.username}`;
   };
 
   return (
@@ -59,7 +57,7 @@ export const UserSearchResultItem = ({ user, onSelect, isSelected = false }: Use
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
-          {getInitials(user.firstName, user.lastName)}
+          {getInitials(user.username)}
         </div>
 
         {/* User Info */}

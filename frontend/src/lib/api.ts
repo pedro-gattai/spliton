@@ -53,7 +53,7 @@ interface ExpenseHistory {
   settledAt: string | null;
   createdAt: string;
   group: { id: string; name: string };
-  payer: { firstName: string; lastName: string };
+  payer: { username: string };
 }
 
 interface ExpenseHistoryOptions {
@@ -64,9 +64,7 @@ interface ExpenseHistoryOptions {
 
 interface UserSearchResult {
   id: string;
-  firstName: string;
-  lastName: string | null;
-  username: string | null;
+  username: string;
   email: string | null;
   tonWalletAddress: string;
 }
@@ -88,16 +86,14 @@ interface Group {
     isActive: boolean;
     user: {
       id: string;
-      firstName: string;
-      lastName: string | null;
+      username: string;
       email: string | null;
       tonWalletAddress: string;
     };
   }>;
   creator: {
     id: string;
-    firstName: string;
-    lastName: string | null;
+    username: string;
     email: string | null;
   };
 }
@@ -261,10 +257,8 @@ class ApiService {
   // User APIs
   async createUser(data: {
     tonWalletAddress: string;
-    firstName: string;
-    lastName?: string;
+    username: string;
     email?: string;
-    username?: string;
   }): Promise<any> {
     const response = await this.request<any>('/user', {
       method: 'POST',
@@ -284,8 +278,6 @@ class ApiService {
   }
 
   async updateUser(id: string, data: Partial<{
-    firstName: string;
-    lastName: string;
     email: string;
     username: string;
   }>): Promise<any> {

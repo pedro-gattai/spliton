@@ -11,9 +11,11 @@ import { useWalletConnection } from "@/hooks/useWalletConnection";
 import { useGroupBalances } from "@/hooks/useGroupBalances";
 import { formatDateSafely } from "@/lib/utils";
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Groups = () => {
   const { user, walletAddress } = useWalletConnection();
+  const navigate = useNavigate();
   const { groups, loading, error, createGroup } = useGroups(user?.id);
   
   // Get group IDs for balance calculation
@@ -147,6 +149,7 @@ export const Groups = () => {
                 <Card 
                   key={group.id} 
                   className={`p-4 hover:shadow-md transition-shadow cursor-pointer border-2 ${getBorderColor(group.id)}`}
+                  onClick={() => navigate(`/groups/${group.id}`)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -170,7 +173,7 @@ export const Groups = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          {group.creator.firstName}
+                          @{group.creator.username}
                         </div>
                       </div>
                     </div>

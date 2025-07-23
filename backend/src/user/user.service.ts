@@ -9,9 +9,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 export interface UserResponse {
   id: string;
   tonWalletAddress: string;
-  firstName: string;
-  lastName?: string;
-  username?: string;
+  username: string;
   email?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -50,7 +48,7 @@ export class UserService {
         this.logger.log(
           `Usuário já existe com endereço: ${createUserDto.tonWalletAddress}`,
         );
-        return this.mapUserToResponse(existingUser);
+        return this.mapUserToResponse(existingUser as any);
       }
 
       // Verificar se username já existe (se fornecido)
@@ -87,9 +85,7 @@ export class UserService {
         data: {
           telegramId,
           tonWalletAddress: createUserDto.tonWalletAddress,
-          firstName: createUserDto.firstName,
-          lastName: createUserDto.lastName,
-          username: createUserDto.username?.toLowerCase(),
+          username: createUserDto.username.toLowerCase(),
           email: createUserDto.email?.toLowerCase(),
         },
       });
@@ -117,7 +113,7 @@ export class UserService {
         where: { tonWalletAddress: walletAddress },
       });
 
-      return user ? this.mapUserToResponse(user) : null;
+      return user ? this.mapUserToResponse(user as any) : null;
     } catch (error) {
       this.logger.error(
         `Erro ao buscar usuário por endereço: ${error.message}`,
@@ -135,7 +131,7 @@ export class UserService {
         where: { username: username.toLowerCase() },
       });
 
-      return user ? this.mapUserToResponse(user) : null;
+      return user ? this.mapUserToResponse(user as any) : null;
     } catch (error) {
       this.logger.error(
         `Erro ao buscar usuário por username: ${error.message}`,
@@ -250,9 +246,9 @@ export class UserService {
       }
 
       this.logger.log(
-        `✅ Usuário encontrado: ${user.firstName} (${user.username || user.email || user.tonWalletAddress})`,
+        `✅ Usuário encontrado: ${user.username} (${user.username || user.email || user.tonWalletAddress})`,
       );
-      return this.mapUserToResponse(user);
+      return this.mapUserToResponse(user as any);
     } catch (error) {
       this.logger.error(`❌ Erro ao buscar usuário: ${error.message}`);
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
@@ -314,7 +310,7 @@ export class UserService {
       });
 
       this.logger.log(`✅ Encontrados ${users.length} usuários`);
-      return users.map(user => this.mapUserToResponse(user));
+      return users.map(user => this.mapUserToResponse(user as any));
     } catch (error) {
       this.logger.error(`❌ Erro ao buscar usuários: ${error.message}`);
       throw new Error(`Falha ao buscar usuários: ${error.message}`);
@@ -330,7 +326,7 @@ export class UserService {
         where: { id },
       });
 
-      return user ? this.mapUserToResponse(user) : null;
+      return user ? this.mapUserToResponse(user as any) : null;
     } catch (error) {
       this.logger.error(`Erro ao buscar usuário por ID: ${error.message}`);
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
@@ -350,7 +346,7 @@ export class UserService {
         data: updateData,
       });
 
-      return this.mapUserToResponse(user);
+      return this.mapUserToResponse(user as any);
     } catch (error) {
       this.logger.error(`Erro ao atualizar usuário: ${error.message}`);
       throw new Error(`Falha ao atualizar usuário: ${error.message}`);
@@ -363,9 +359,7 @@ export class UserService {
   private mapUserToResponse(user: {
     id: string;
     tonWalletAddress: string;
-    firstName: string;
-    lastName?: string | null;
-    username?: string | null;
+    username: string;
     email?: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -373,9 +367,7 @@ export class UserService {
     return {
       id: user.id,
       tonWalletAddress: user.tonWalletAddress,
-      firstName: user.firstName,
-      lastName: user.lastName ?? undefined,
-      username: user.username ?? undefined,
+      username: user.username,
       email: user.email ?? undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

@@ -46,7 +46,7 @@ export const Profile = () => {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold">
-                  {user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuário'}
+                  {user ? `@${user.username}` : 'Usuário'}
                 </h2>
                 <p className="text-muted-foreground">
                   {user?.email || user?.username || (walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Não conectado')}

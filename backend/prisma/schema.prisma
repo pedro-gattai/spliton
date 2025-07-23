@@ -13,9 +13,7 @@ datasource db {
 model User {
   id                String   @id @default(uuid())
   telegramId        BigInt   @unique @map("telegram_id")
-  username          String?
-  firstName         String   @map("first_name")
-  lastName          String?  @map("last_name")
+  username          String   @unique
   email             String?  @unique
   tonWalletAddress  String   @map("ton_wallet_address")
   createdAt         DateTime @default(now()) @map("created_at")

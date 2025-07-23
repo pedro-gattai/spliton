@@ -335,7 +335,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
     
     toast({
       title: "Participante adicionado",
-      description: `${user.firstName} foi adicionado como participante externo.`,
+                      description: `@${user.username} foi adicionado como participante externo.`,
     });
   };
 
@@ -355,7 +355,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const getPayerName = () => {
     if (!selectedGroup || !form.getValues("payerId")) return "";
     const payer = selectedGroup.members.find((m: any) => m.user.id === form.getValues("payerId"));
-    return payer ? payer.user.firstName : "";
+    return payer ? `@${payer.user.username}` : "";
   };
 
   const getParticipantsWithNames = () => {
@@ -365,7 +365,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
       const member = selectedGroup.members.find((m: any) => m.user.id === p.userId);
       return {
         userId: p.userId,
-        userName: member ? member.user.firstName : "Desconhecido",
+        userName: member ? `@${member.user.username}` : "Desconhecido",
         amountOwed: Number(p.amountOwed)
       };
     });

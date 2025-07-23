@@ -9,6 +9,7 @@ import { TelegramProvider } from "@/components/TelegramProvider";
 import { WalletProtectedRoute } from "./components/WalletProtectedRoute";
 import { Dashboard } from "./pages/Dashboard";
 import { Groups } from "./pages/Groups";
+import { GroupDetails } from "./pages/GroupDetails";
 import { History } from "./pages/History";
 import { Profile } from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,11 @@ const App = () => (
             <Route path="/groups" element={
               <WalletProtectedRoute>
                 <Groups />
+              </WalletProtectedRoute>
+            } />
+            <Route path="/groups/:groupId" element={
+              <WalletProtectedRoute>
+                <GroupDetails />
               </WalletProtectedRoute>
             } />
             <Route path="/history" element={

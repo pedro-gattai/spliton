@@ -12,13 +12,10 @@ import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { CheckCircle, XCircle, Loader2, User } from "lucide-react";
 
 const userRegistrationSchema = z.object({
-  firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  lastName: z.string().optional(),
   username: z.string()
     .min(3, "Username deve ter pelo menos 3 caracteres")
     .max(20, "Username deve ter no máximo 20 caracteres")
-    .regex(/^[a-zA-Z0-9]+$/, "Username deve conter apenas letras e números")
-    .optional(),
+    .regex(/^[a-zA-Z0-9]+$/, "Username deve conter apenas letras e números"),
   email: z.string().email("Email inválido").optional(),
 });
 
@@ -58,8 +55,6 @@ export const UserRegistrationModal = ({
     try {
       const result = await apiService.createUser({
         tonWalletAddress: walletAddress,
-        firstName: data.firstName,
-        lastName: data.lastName,
         username: data.username,
         email: data.email,
       });
@@ -96,30 +91,10 @@ export const UserRegistrationModal = ({
               id="walletAddress"
               value={walletAddress}
               disabled
-              className="bg-muted"
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="firstName">Nome *</Label>
-            <Input
-              id="firstName"
-              {...register("firstName")}
-              placeholder="Digite seu nome"
-            />
-            {errors.firstName && (
-              <p className="text-sm text-destructive">{errors.firstName.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lastName">Sobrenome</Label>
-            <Input
-              id="lastName"
-              {...register("lastName")}
-              placeholder="Digite seu sobrenome"
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="username">Nome de usuário</Label>
@@ -160,7 +135,7 @@ export const UserRegistrationModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email (opcional)</Label>
             <Input
               id="email"
               type="email"

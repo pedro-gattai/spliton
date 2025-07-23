@@ -11,9 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 interface GroupMember {
   user: {
     id: string;
-    firstName: string;
-    lastName?: string | null;
-    username?: string | null;
+    username: string;
     email?: string | null;
     tonWalletAddress: string;
   };
@@ -51,16 +49,12 @@ export const ParticipantSelector = ({
 
   const { user: searchResult, isSearching, error: searchError, hasSearched, clearSearch } = useUserSearch(searchIdentifier);
 
-  const getInitials = (firstName: string, lastName?: string | null) => {
-    const first = firstName.charAt(0).toUpperCase();
-    const last = lastName ? lastName.charAt(0).toUpperCase() : '';
-    return first + last;
+  const getInitials = (username: string) => {
+    return username.charAt(0).toUpperCase();
   };
 
   const getFullName = (member: GroupMember) => {
-    return member.user.lastName 
-      ? `${member.user.firstName} ${member.user.lastName}` 
-      : member.user.firstName;
+    return `@${member.user.username}`;
   };
 
   const getIdentifier = (member: GroupMember) => {
@@ -126,10 +120,10 @@ export const ParticipantSelector = ({
       setShowSearchResults(false);
       setShowExternalSearch(false);
       
-      toast({
-        title: "Usuário adicionado",
-        description: `${user.firstName} foi adicionado como participante externo.`,
-      });
+                        toast({
+                    title: "Usuário adicionado",
+                    description: `@${user.username} foi adicionado como participante externo.`,
+                  });
     }
   };
 
@@ -266,7 +260,7 @@ export const ParticipantSelector = ({
                 
                 {showAvatars && (
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
-                    {getInitials(member.user.firstName, member.user.lastName)}
+                    {getInitials(member.user.username)}
                   </div>
                 )}
 
