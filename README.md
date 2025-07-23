@@ -6,7 +6,9 @@
 
 ## 🎯 Sobre o Projeto
 
-SplitOn é uma aplicação descentralizada para divisão de despesas construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
+SplitOn é uma aplicação descentralizada para divisão de despesas de maneira facilitada construída na blockchain TON. Permite que usuários criem grupos, adicionem despesas compartilhadas e realizem pagamentos diretos em TON, tudo de forma transparente e segura.
+
+### 
 
 ## ✨ Features Principais
 
@@ -17,9 +19,18 @@ SplitOn é uma aplicação descentralizada para divisão de despesas construída
 - 📱 **Interface responsiva** - Funciona em desktop e mobile
 - 🤖 **Bot do Telegram** - Acesso rápido via Telegram
 - 📊 **Histórico completo** - Visualize todas as transações
-- ⚡ **Notificações** - Receba alertas de despesas e pagamentos
+- ⚡ **Notificações** - Receba alertas de despesas e pagamentos(Em breve)
 
 ## 🏗️ Arquitetura do Projeto
+
+### **Arquitetura do software**
+<img src=".assets/arquiteturaSpliton.png"></img>
+
+O usuario acessa a aplicação;
+
+i. por meio da interface web, a interafce web faz requisicoes para o backend que busca informacoes no banco dados para mostrar as informacoes ao usuario, quando ele executa alguma acao o backend atualiza no banco e quando o usuario realiza um pagamento ele executa o smartcontract, sempre salvando as informacoes no banco
+
+ii. por meio do bot do telegram, o bot do telegram envia uma mensagem de boas vindas e um link para abrir o mini app dentro do aplicativo do telegram, o mini app faz requisicoes para o backend que busca informacoes no banco dados para mostrar as informacoes ao usuario, quando ele executa alguma acao o backend atualiza no banco e quando o usuario realiza um pagamento ele executa o smartcontract, sempre salvando as informacoes no banco.
 
 ### **Stack Tecnológica**
 
