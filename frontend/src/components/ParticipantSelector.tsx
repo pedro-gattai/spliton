@@ -119,11 +119,11 @@ export const ParticipantSelector = ({
       clearSearch();
       setShowSearchResults(false);
       setShowExternalSearch(false);
-      
-                        toast({
-                    title: "Usuário adicionado",
-                    description: `@${user.username} foi adicionado como participante externo.`,
-                  });
+
+      toast({
+        title: "Usuário adicionado",
+        description: `@${user.username} foi adicionado como participante externo.`,
+      });
     }
   };
 
@@ -173,7 +173,7 @@ export const ParticipantSelector = ({
           <div className="text-sm font-medium text-muted-foreground mb-2">
             🔍 Buscar usuário externo
           </div>
-          
+
           <div className="relative">
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -239,17 +239,16 @@ export const ParticipantSelector = ({
           </div>
         </div>
       )}
-      
+
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {members.map((member) => {
           const selected = isSelected(member.user.id);
-          
+
           return (
             <div
               key={member.user.id}
-              className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
-              }`}
+              className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+                }`}
             >
               <div className="flex items-center gap-3 flex-1">
                 <Checkbox
@@ -257,7 +256,7 @@ export const ParticipantSelector = ({
                   onCheckedChange={() => onToggle(member.user.id)}
                   className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                
+
                 {showAvatars && (
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
                     {getInitials(member.user.username)}
