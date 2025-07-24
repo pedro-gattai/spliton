@@ -35,7 +35,7 @@ export const useSettlements = (
   const [totalAmount, setTotalAmount] = useState(0);
 
   const { user, connected } = useWalletConnection();
-  const { executeDirectPayment } = useTonContract();
+  const { executeDirectPayment, testDirectPayment } = useTonContract();
 
   // Calcular settlements (buscar dívidas do usuário)
   const calculateSettlements = useCallback(async (): Promise<boolean> => {
@@ -236,7 +236,16 @@ export const useSettlements = (
         `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
       );
       
-      if (!result.success) {
+      if (!result.success && result.error?.includes('Timeout')) {
+        console.log('🔄 Timeout no contrato, tentando pagamento direto...');
+        const directResult = await testDirectPayment(settlement.toAddress!, settlement.amount);
+        if (directResult.success) {
+          console.log('✅ Pagamento direto funcionou!');
+          // Continue with marking as paid
+        } else {
+          throw new Error(directResult.error || 'Falha no pagamento direto');
+        }
+      } else if (!result.success) {
         throw new Error(result.error || 'Falha no pagamento');
       }
 
@@ -268,7 +277,7 @@ export const useSettlements = (
     } finally {
       setIsPayingIndividual(null);
     }
-  }, [connected, executeDirectPayment, onError]);
+  }, [connected, executeDirectPayment, testDirectPayment, onError]);
 
 
 

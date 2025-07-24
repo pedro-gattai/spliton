@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { beginCell, toNano, Address, Cell, Dictionary } from '@ton/core';
 
@@ -302,115 +302,107 @@ export const useTonContract = () => {
       setIsExecuting(true);
       
       try {
-        console.log('🚀 Iniciando DirectPayment (TACT):', { to, amount, description });
-
-        // ✅ Validações de rede
-        console.log('🔍 Verificando contrato testnet:', {
-          contractAddress,
-          isTestnet: contractAddress.startsWith('kQ'),
-          walletNetwork: wallet?.account?.chain
-        });
+        console.log('🚀 Iniciando DirectPayment (sem timeout):', { to, amount, description });
 
         // ✅ Validações básicas
         if (!to || !isValidTonAddress(to)) {
           throw new Error(`Endereço TON inválido: ${to}`);
         }
 
-        if (!contractAddress || !isValidTonAddress(contractAddress)) {
-          throw new Error('Endereço do contrato inválido');
-        }
-
         if (amount <= 0 || amount > 100) {
           throw new Error('Valor deve estar entre 0.01 e 100 TON');
         }
 
-        // ✅ Cálculo com margem para testnet
-        const contractFee = 0.01;      // Reduzido para testnet
-        const networkFeeMargin = 0.05; // Margem para taxas da rede
-        const totalRequired = amount + contractFee + networkFeeMargin;
-        
-        console.log('💰 Cálculo testnet:', {
-          amount: `${amount} TON`,
-          contractFee: `${contractFee} TON`,
-          networkFeeMargin: `${networkFeeMargin} TON`,
-          totalRequired: `${totalRequired} TON`
-        });
+        // ✅ ESTRATÉGIA 1: Tentar com contrato (SEM TIMEOUT)
+        try {
+          console.log('📋 ESTRATÉGIA 1: Usando contrato (sem timeout)');
+          
+          const contractFee = 0.01;
+          const networkFeeMargin = 0.05;
+          const totalRequired = amount + contractFee + networkFeeMargin;
+          
+          const hasSufficientBalance = await checkSufficientBalance(totalRequired);
+          if (!hasSufficientBalance) {
+            throw new Error(`Saldo insuficiente. Necessário: ${totalRequired} TON`);
+          }
 
-        // ✅ Verificar saldo
-        const hasSufficientBalance = await checkSufficientBalance(totalRequired);
-        if (!hasSufficientBalance) {
-          throw new Error(`Saldo insuficiente. Necessário: ${totalRequired} TON`);
+          const directPaymentPayload = createDirectPaymentPayload(to, amount, description);
+          
+          const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutos em vez de 5
+            messages: [{
+              address: contractAddress,
+              amount: toNano(totalRequired).toString(),
+              payload: directPaymentPayload
+            }]
+          };
+
+          console.log('📤 Enviando via contrato (SEM TIMEOUT)...');
+          
+          // ✅ REMOVER TIMEOUT - deixar a carteira processar naturalmente
+          const result = await tonConnectUI.sendTransaction(transaction) as { boc: string };
+          
+          console.log('✅ DirectPayment via contrato executado!');
+          
+          return {
+            success: true,
+            transactionHash: result.boc,
+            totalAmount: amount,
+            settlementsCount: 1,
+            note: 'Pagamento via contrato'
+          };
+
+        } catch (contractError) {
+          console.error('❌ Erro no contrato, tentando pagamento direto:', contractError);
+          
+          // ✅ ESTRATÉGIA 2: Fallback para pagamento direto
+          console.log('🔄 ESTRATÉGIA 2: Pagamento direto (sem contrato)');
+          
+          const directTransaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutos
+            messages: [{
+              address: to,
+              amount: toNano(amount + 0.01).toString(), // Amount + gas mínimo
+              // Sem payload - transação TON simples
+            }]
+          };
+
+          console.log('📤 Enviando pagamento direto (SEM TIMEOUT)...');
+          const directResult = await tonConnectUI.sendTransaction(directTransaction) as { boc: string };
+          
+          console.log('✅ Pagamento direto executado!');
+          
+          return {
+            success: true,
+            transactionHash: directResult.boc,
+            totalAmount: amount,
+            settlementsCount: 1,
+            note: 'Pagamento direto realizado (contrato falhou)'
+          };
         }
 
-        // ✅ Criar payload
-        const directPaymentPayload = createDirectPaymentPayload(to, amount, description);
-        
-        // ✅ Debug do payload
-        console.log('🔍 Payload debug:', {
-          opcode: '0x04 (DirectPayment)',
-          to: to,
-          amountTON: amount,
-          amountNano: toNano(amount).toString(),
-          description: description,
-          payloadLength: directPaymentPayload.length
-        });
-
-        // ✅ Construir transação
-        const transaction = {
-          validUntil: Math.floor(Date.now() / 1000) + 300,
-          messages: [{
-            address: contractAddress,
-            amount: toNano(totalRequired).toString(),
-            payload: directPaymentPayload
-          }]
-        };
-
-        console.log('🔍 Debug da transação completa:', {
-          contractAddress,
-          walletAddress: wallet?.account?.address,
-          totalRequired,
-          transaction: JSON.stringify(transaction, null, 2)
-        });
-
-        console.log('📤 Enviando transação...');
-
-        // ✅ Enviar com timeout
-        const result = await Promise.race([
-          tonConnectUI.sendTransaction(transaction),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: Transação demorou mais de 30s')), 30000)
-          )
-        ]) as { boc: string };
-
-        console.log('✅ DirectPayment executado com sucesso!');
-
-        return {
-          success: true,
-          transactionHash: result.boc,
-          totalAmount: amount,
-          settlementsCount: 1,
-        };
-
       } catch (error) {
-        console.error('❌ Erro detalhado em DirectPayment:', error);
-
+        console.error('❌ Erro completo em DirectPayment:', error);
+        
         let errorMessage = 'Erro desconhecido na transação';
+        let suggestion = '';
         
         if (error instanceof Error) {
-          if (error.message.includes('Unable to verify') || error.message.includes('verify transaction')) {
-            errorMessage = 'Erro de verificação. Verifique sua conexão e tente trocar de Wi-Fi para dados móveis.';
-          } else if (error.message.includes('User declined') || error.message.includes('cancelled')) {
+          if (error.message.includes('User declined') || error.message.includes('cancelled')) {
             errorMessage = 'Transação cancelada pelo usuário';
-          } else if (error.message.includes('Timeout')) {
-            errorMessage = 'Timeout: Tente novamente';
-          } else if (error.message.includes('Insufficient')) {
-            errorMessage = 'Saldo insuficiente para completar a transação';
+          } else if (error.message.includes('Unable to verify') || error.message.includes('verify transaction')) {
+            errorMessage = 'Erro de verificação da transação';
+            suggestion = 'Tente trocar de Wi-Fi para dados móveis ou vice-versa';
           } else {
             errorMessage = error.message;
           }
         }
 
-        return { success: false, error: errorMessage };
+        return { 
+          success: false, 
+          error: errorMessage,
+          suggestion: suggestion || 'Verifique sua conexão e tente novamente'
+        };
       } finally {
         setIsExecuting(false);
       }
@@ -418,55 +410,66 @@ export const useTonContract = () => {
     [wallet, tonConnectUI, contractAddress, isValidTonAddress, createDirectPaymentPayload, checkSufficientBalance]
   );
 
-  // ✅ FUNÇÃO DE TESTE SEM PAYLOAD PARA DEBUG
-  const testDirectPaymentWithoutPayload = useCallback(
+  // ✅ ADICIONAR FUNÇÃO DE TESTE DIRETO
+  const testDirectPayment = useCallback(
     async (to: string, amount: number): Promise<ContractExecutionResult> => {
       if (!wallet) {
-        return { 
-          success: false, 
-          error: 'Carteira TON não conectada' 
-        };
+        return { success: false, error: 'Carteira TON não conectada' };
       }
 
       setIsExecuting(true);
       
       try {
-        console.log('🧪 TESTE: Enviando transação sem payload para debug');
+        console.log('🧪 TESTE: Pagamento direto simples');
 
-        // ✅ Versão simplificada para teste
+        // ✅ Transação super simples para teste
         const testTransaction = {
-          validUntil: Math.floor(Date.now() / 1000) + 300,
+          validUntil: Math.floor(Date.now() / 1000) + 600,
           messages: [{
-            address: contractAddress,
-            amount: toNano(amount + 0.01).toString()
-            // SEM payload - deixar o contrato processar como quiser
+            address: to,
+            amount: toNano(amount).toString(),
           }]
         };
 
-        console.log('🧪 Transação de teste:', testTransaction);
+        console.log('🧪 Enviando transação de teste:', testTransaction);
         const result = await tonConnectUI.sendTransaction(testTransaction) as { boc: string };
 
+        console.log('✅ Teste direto realizado!');
+        
         return {
           success: true,
           transactionHash: result.boc,
           totalAmount: amount,
           settlementsCount: 1,
-          note: 'Teste sem payload realizado com sucesso'
+          note: 'Teste de pagamento direto'
         };
 
       } catch (error) {
-        console.error('❌ Erro no teste sem payload:', error);
+        console.error('❌ Erro no teste direto:', error);
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Erro desconhecido no teste',
-          note: 'Teste sem payload falhou'
+          error: error instanceof Error ? error.message : 'Erro no teste',
         };
       } finally {
         setIsExecuting(false);
       }
     },
-    [wallet, tonConnectUI, contractAddress]
+    [wallet, tonConnectUI]
   );
+
+  // ✅ VERIFICAR CONFIGURAÇÃO DE REDE
+  useEffect(() => {
+    if (wallet) {
+      console.log('🔍 Configuração detalhada da carteira:', {
+        address: wallet.account?.address,
+        chain: wallet.account?.chain,
+        publicKey: wallet.account?.publicKey,
+        walletStateInit: wallet.account?.walletStateInit,
+        contractIsTestnet: contractAddress.startsWith('kQ'),
+        contractAddress
+      });
+    }
+  }, [wallet, contractAddress]);
 
   return {
     // Estados
@@ -477,7 +480,7 @@ export const useTonContract = () => {
     // Ações
     executeBatchSettlement,
     executeDirectPayment,
-    testDirectPaymentWithoutPayload, // ✅ Nova função de teste
+    testDirectPayment, // ✅ Nova função de teste
     
     // Configuração
     contractAddress,
@@ -485,6 +488,6 @@ export const useTonContract = () => {
     // Utilitários
     toNano: (amount: string | number) => toNano(amount.toString()).toString(),
     isValidTonAddress,
-    checkSufficientBalance, // ✅ Nova função exportada
+    checkSufficientBalance,
   };
 };
