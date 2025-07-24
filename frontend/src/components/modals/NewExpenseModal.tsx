@@ -543,7 +543,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                                   @{member.user.username}
                                   {isRecommended && (
                                     <Badge variant="secondary" className="text-xs">
-                                      Recomendado
+                                      Você
                                     </Badge>
                                   )}
                                 </div>
