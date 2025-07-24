@@ -90,20 +90,6 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     calculateSettlements();
   };
 
-  const handlePayAll = async () => {
-    const result = await executeAllSettlements();
-    if (result) {
-      setSuccess(true);
-      onSettlementComplete?.();
-      setTimeout(() => {
-        if (settlements.length === 0) {
-          setIsOpen(false);
-          setSuccess(false);
-        }
-      }, 2000);
-    }
-  };
-
   const handlePayIndividual = async (settlement: Settlement) => {
     const result = await executeIndividualSettlement(settlement);
     if (result) {
@@ -118,25 +104,18 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
     }
   };
 
-  const getButtonText = () => {
-    if (groupId && groupName) {
-      return `Resolver ${groupName}`;
-    }
-    return 'Resolver Todas as Dívidas';
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
           type="button"
           variant="default"
-          className={`gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 ${className}`}
+          className={`gap-2 bg-gradient-to-r from-[#005A99] via-[#007ACC] to-[#0098EA] hover:from-[#004466] hover:to-[#007ACC] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 ${className}`}
           onClick={handleOpenDialog}
           disabled={!connected}
         >
           <Calculator className="h-4 w-4" />
-          {getButtonText()}
+          Ver Todas as Dívidas
         </Button>
       </DialogTrigger>
       
@@ -281,24 +260,6 @@ export const SettlementButton: React.FC<SettlementButtonProps> = ({
                           {totalAmount.toFixed(2)} TON
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        onClick={handlePayAll}
-                        disabled={!connected || isExecuting}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {isExecuting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            Pagando Tudo...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Pagar Tudo
-                          </>
-                        )}
-                      </Button>
                     </div>
                   </div>
                 </CardContent>
