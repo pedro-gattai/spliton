@@ -442,7 +442,7 @@ export const useTonContract = () => {
           validUntil: Math.floor(Date.now() / 1000) + 600,
           messages: [{
             address: to,
-            amount: toNano(amount + 0.01).toString(),
+            amount: toNano(amount).toString(),
           }]
         };
 
