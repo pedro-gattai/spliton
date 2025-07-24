@@ -11,20 +11,20 @@ import { UserRegistrationModal } from "@/components/modals/UserRegistrationModal
 
 export const Profile = () => {
   // Hook para gerenciar conexão da carteira e usuário
-  const { 
-    user, 
-    isLoading: userLoading, 
-    connected, 
-    walletAddress, 
-    showRegistrationModal, 
-    handleUserCreated, 
-    handleRegistrationModalClose 
+  const {
+    user,
+    isLoading: userLoading,
+    connected,
+    walletAddress,
+    showRegistrationModal,
+    handleUserCreated,
+    handleRegistrationModalClose
   } = useWalletConnection();
-  
+
   // Hook para buscar o saldo da carteira
-  const { 
-    data: walletBalance, 
-    isLoading: balanceLoading 
+  const {
+    data: walletBalance,
+    isLoading: balanceLoading
   } = useWalletBalance(walletAddress || null);
 
   const isLoading = userLoading || balanceLoading;
@@ -52,9 +52,9 @@ export const Profile = () => {
                   {user?.email || user?.username || (walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Não conectado')}
                 </p>
                 <Badge variant="secondary" className="mt-2">
-                  <img 
-                    src="/lovable-uploads/f9dad574-a42b-462c-8497-92ec966518e5.png" 
-                    alt="TON" 
+                  <img
+                    src="/lovable-uploads/f9dad574-a42b-462c-8497-92ec966518e5.png"
+                    alt="TON"
                     className="w-4 h-4 mr-1"
                   />
                   {connected ? 'Conectado' : 'Desconectado'}
@@ -83,7 +83,7 @@ export const Profile = () => {
           {/* Settings */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Configurações</h3>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -92,7 +92,7 @@ export const Profile = () => {
                 </div>
                 <div className="w-12 h-6 bg-muted rounded-full"></div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Moon className="w-5 h-5" />
@@ -100,7 +100,7 @@ export const Profile = () => {
                 </div>
                 <div className="w-12 h-6 bg-muted rounded-full"></div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Shield className="w-5 h-5" />
@@ -115,11 +115,11 @@ export const Profile = () => {
 
           {/* App Info */}
           <Card className="p-6 text-center">
-                          <img 
-                src="/spliton-logo.png" 
-                alt="SplitOn Logo" 
-                className="w-12 h-12 mx-auto mb-4"
-              />
+            <img
+              src="/spliton-logo.png"
+              alt="SplitOn Logo"
+              className="w-12 h-12 mx-auto mb-4"
+            />
             <h3 className="font-semibold mb-2">SplitOn</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Versão 1.0.0
@@ -132,7 +132,7 @@ export const Profile = () => {
       </div>
 
       <BottomNavigation />
-      
+
       {/* Modal de Registro de Usuário */}
       {showRegistrationModal && walletAddress && (
         <UserRegistrationModal
