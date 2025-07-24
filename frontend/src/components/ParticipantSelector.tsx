@@ -28,6 +28,7 @@ interface ParticipantSelectorProps {
   showAvatars?: boolean;
   showBalance?: boolean;
   allowExternalUsers?: boolean;
+  payerId?: string;
 }
 
 export const ParticipantSelector = ({
@@ -40,6 +41,7 @@ export const ParticipantSelector = ({
   showAvatars = true,
   showBalance = true,
   allowExternalUsers = false,
+  payerId
 }: ParticipantSelectorProps) => {
   const [searchIdentifier, setSearchIdentifier] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -289,6 +291,7 @@ export const ParticipantSelector = ({
                     className="w-20 h-8 text-sm"
                     value={getSelectedAmount(member.user.id)}
                     onChange={(e) => onAmountChange(member.user.id, e.target.value)}
+                    disabled={payerId === member.user.id}
                   />
                 </div>
               )}

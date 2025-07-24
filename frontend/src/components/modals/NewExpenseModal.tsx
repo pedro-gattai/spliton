@@ -28,12 +28,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  X, 
-  Users, 
-  DollarSign, 
-  Loader2, 
+import {
+  Plus,
+  X,
+  Users,
+  DollarSign,
+  Loader2,
   Crown,
   Calculator,
   Receipt,
@@ -91,16 +91,16 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [totalValidation, setTotalValidation] = useState({ isValid: true, message: '' });
-  
+
   const { user } = useWalletConnection();
   const { groups, loading: loadingGroups } = useGroups(user?.id);
-  
+
   // Stabilize array reference to prevent unnecessary re-renders
-  const selectedGroupIds = useMemo(() => 
-    selectedGroup ? [selectedGroup.id] : [], 
-    [selectedGroup?.id]
+  const selectedGroupIds = useMemo(() =>
+    selectedGroup ? [selectedGroup.id] : [],
+    [selectedGroup]
   );
-  
+
   const { balances } = useGroupBalances(user?.id, selectedGroupIds);
   const { toast } = useToast();
 
@@ -125,36 +125,53 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const watchedPayerId = form.watch("payerId");
 
   // Cálculo automático em tempo real - usando setTimeout para quebrar o loop
+  const previousPayerIdRef = useRef<string | undefined>();
+
   const calculateSplit = useCallback((amount: number, participants: any[], splitType: string) => {
     if (splitType === 'EQUAL' && participants.length > 0) {
       const payerId = watchedPayerId;
-      
-      // Para divisão igual, dividir o valor total entre TODOS os participantes
       const amountPerPerson = amount / participants.length;
       const updatedParticipants = participants.map(p => {
         if (p.userId === payerId) {
-          // Pagador não deve nada (já pagou)
           return { ...p, amountOwed: "0" };
         } else {
-          // Outros participantes devem sua parte
           return { ...p, amountOwed: amountPerPerson.toFixed(2) };
         }
       });
-      
-      // Use setTimeout to break the render loop
       setTimeout(() => {
         form.setValue("participants", updatedParticipants);
       }, 0);
     }
+    // Só zere o pagador se ele mudou!
+    if (
+      splitType === 'CUSTOM' &&
+      participants.length > 0 &&
+      previousPayerIdRef.current !== watchedPayerId
+    ) {
+      const payerId = watchedPayerId;
+      const updatedParticipants = participants.map(p =>
+        p.userId === payerId ? { ...p, amountOwed: "0" } : p
+      );
+      setTimeout(() => {
+        form.setValue("participants", updatedParticipants);
+      }, 0);
+    }
+    previousPayerIdRef.current = watchedPayerId;
   }, [form, watchedPayerId]);
 
   // Executar cálculo quando mudar valor, participantes, pagador ou tipo de divisão
   useEffect(() => {
     const amount = Number(watchedAmount);
-    if (amount > 0 && watchedParticipants && watchedParticipants.length > 0 && watchedPayerId && watchedSplitType) {
+    if (
+      amount > 0 &&
+      watchedParticipants &&
+      watchedParticipants.length > 0 &&
+      watchedPayerId &&
+      watchedSplitType
+    ) {
       calculateSplit(amount, watchedParticipants, watchedSplitType);
     }
-  }, [watchedAmount, watchedParticipants?.length, watchedSplitType, watchedPayerId, calculateSplit]);
+  }, [watchedAmount, watchedParticipants.length, watchedSplitType, watchedPayerId, calculateSplit, watchedParticipants]);
 
   // Validação da soma em tempo real
   useEffect(() => {
@@ -162,7 +179,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
       const amount = Number(watchedAmount);
       const totalOwed = watchedParticipants.reduce((sum, p) => sum + Number(p.amountOwed), 0);
       const difference = Math.abs(totalOwed - amount);
-      
+
       if (difference > 0.01) {
         setTotalValidation({
           isValid: false,
@@ -179,7 +196,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   // Sugerir categoria baseada na descrição
   const suggestCategory = useCallback((description: string) => {
     if (!description) return;
-    
+
     const lowerDesc = description.toLowerCase();
     for (const category of categories) {
       if (category.keywords.some(keyword => lowerDesc.includes(keyword))) {
@@ -198,7 +215,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   // Sugerir pagador baseado no saldo
   const suggestPayer = useCallback((group: any) => {
     if (!group || !balances[group.id]) return;
-    
+
     const groupBalance = balances[group.id];
     if (groupBalance.status === 'receive') {
       // Se o usuário deve receber, sugerir ele como pagador
@@ -209,7 +226,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
         const memberBalance = balances[group.id];
         return memberBalance && memberBalance.status === 'receive';
       });
-      
+
       if (bestPayer) {
         form.setValue("payerId", bestPayer.user.id);
       }
@@ -236,7 +253,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Processar imagem se houver
       let receiptImageUrl = data.receiptImage;
@@ -259,14 +276,14 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
           amountOwed: Number(p.amountOwed)
         })),
       };
-      
+
       await onSubmit?.(payload);
       setOpen(false);
       form.reset();
       setSelectedGroup(null);
       setReceiptFile(null);
       setReceiptPreview(null);
-      
+
       toast({
         title: "Sucesso",
         description: "Despesa criada com sucesso!",
@@ -285,21 +302,21 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
 
   const handleGroupChange = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
-    
+
     // Add change detection to avoid redundant updates
     if (selectedGroup?.id === groupId) return;
-    
+
     setSelectedGroup(group || null);
     form.setValue("groupId", groupId);
-    
+
     if (group) {
       // Preencher participantes com todos do grupo
-      const allParticipants = group.members.map((m: any) => ({ 
-        userId: m.user.id, 
-        amountOwed: "0" 
+      const allParticipants = group.members.map((m: any) => ({
+        userId: m.user.id,
+        amountOwed: "0"
       }));
       form.setValue("participants", allParticipants);
-      
+
       // Sugerir pagador
       suggestPayer(group);
     }
@@ -309,19 +326,19 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
     const current = form.getValues("participants");
     const exists = current.find((p: any) => p.userId === userId);
     let updated;
-    
+
     if (exists) {
       updated = current.filter((p: any) => p.userId !== userId);
     } else {
       updated = [...current, { userId, amountOwed: "0" }];
     }
-    
+
     form.setValue("participants", updated);
   };
 
   const updateParticipantAmount = (userId: string, amount: string) => {
     const current = form.getValues("participants");
-    const updated = current.map((p: any) => 
+    const updated = current.map((p: any) =>
       p.userId === userId ? { ...p, amountOwed: amount } : p
     );
     form.setValue("participants", updated);
@@ -330,7 +347,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
   const handleAddExternalUser = (user: any) => {
     const current = form.getValues("participants");
     const exists = current.find((p: any) => p.userId === user.id);
-    
+
     if (exists) {
       toast({
         title: "Usuário já adicionado",
@@ -342,16 +359,16 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
 
     const newParticipant = { userId: user.id, amountOwed: "0" };
     form.setValue("participants", [...current, newParticipant]);
-    
+
     toast({
       title: "Participante adicionado",
-                      description: `@${user.username} foi adicionado como participante externo.`,
+      description: `@${user.username} foi adicionado como participante externo.`,
     });
   };
 
   const handleReceiptUpload = (file: File | null) => {
     setReceiptFile(file);
-    
+
     if (file) {
       const url = URL.createObjectURL(file);
       setReceiptPreview(url);
@@ -370,7 +387,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
 
   const getParticipantsWithNames = () => {
     if (!selectedGroup || !watchedParticipants) return [];
-    
+
     return watchedParticipants.map(p => {
       const member = selectedGroup.members.find((m: any) => m.user.id === p.userId);
       return {
@@ -432,11 +449,11 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                     <FormItem>
                       <FormLabel>Valor (TON)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          placeholder="0.00" 
-                          {...field} 
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -535,7 +552,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                           {selectedGroup.members.map((member: any) => {
                             const balance = balances[selectedGroup.id];
                             const isRecommended = balance?.status === 'receive' && member.user.id === user?.id;
-                            
+
                             return (
                               <SelectItem key={member.user.id} value={member.user.id}>
                                 <div className="flex items-center gap-2">
@@ -578,6 +595,7 @@ export const NewExpenseModal = ({ children, onSubmit, userId }: NewExpenseModalP
                   showAvatars={true}
                   showBalance={true}
                   allowExternalUsers={true}
+                  payerId={watchedPayerId} // <-- PASSE O PAYER ID AQUI
                 />
 
                 {/* Tipo de Divisão */}
