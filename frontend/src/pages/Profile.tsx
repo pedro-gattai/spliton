@@ -78,17 +78,6 @@ export const Profile = () => {
                 <div className="text-xs text-muted-foreground">Grupos</div>
               </div>
             </div>
-
-            {connected ? (
-              <WalletConnectButton 
-                variant="outline" 
-                className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark"
-              />
-            ) : (
-              <WalletConnectButton 
-                className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark"
-              />
-            )}
           </Card>
 
           {/* Settings */}
