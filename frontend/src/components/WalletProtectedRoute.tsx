@@ -37,13 +37,22 @@ export const WalletProtectedRoute = ({
             </p>
           </div>
 
-          <div className="space-y-4">
-            <WalletConnectButton 
-              className="w-full bg-ton-gradient text-white hover:bg-ton-gradient-dark"
-            />
-            
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-4 flex flex-col items-center">
+            <WalletConnectButton />
+            <p className="text-sm text-muted-foreground text-center">
               Você precisa conectar sua carteira TON para acessar esta página
+            </p>
+            <p className="text-xs text-center text-gray-400">
+              Não tem carteira? Você pode criar uma carteira TON direto no Telegram usando o&nbsp;
+              <a
+                href="https://t.me/wallet"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-[#0088cc] hover:text-[#005fa3] font-medium"
+              >
+                @wallet
+              </a>
+              .
             </p>
           </div>
         </Card>

@@ -16,7 +16,9 @@ export const WalletConnectButton = ({
       <TonConnectButton 
         className="w-full"
         style={{
-          backgroundColor: variant === 'outline' ? 'transparent' : '#0088cc',
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
           border: '0px solid #0088cc',
           borderRadius: '8px',
           padding: '12px 24px',
