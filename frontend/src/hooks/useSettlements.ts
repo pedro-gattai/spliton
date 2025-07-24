@@ -35,7 +35,7 @@ export const useSettlements = (
   const [totalAmount, setTotalAmount] = useState(0);
 
   const { user, connected } = useWalletConnection();
-  const { executeDirectPayment, testDirectPayment } = useTonContract();
+  const { smartPayment, quickPayment } = useTonContract();
 
   // Calcular settlements (buscar dívidas do usuário)
   const calculateSettlements = useCallback(async (): Promise<boolean> => {
@@ -145,7 +145,7 @@ export const useSettlements = (
 
         try {
           // ✅ USAR A CARTEIRA CONECTADA EM VEZ DO BACKEND
-          const result = await executeDirectPayment(
+          const result = await smartPayment(
             settlement.toAddress!,
             settlement.amount,
             `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
@@ -205,7 +205,7 @@ export const useSettlements = (
     } finally {
       setIsExecuting(false);
     }
-  }, [connected, settlements, executeDirectPayment, onError]);
+  }, [connected, smartPayment, onError]);
 
   // Executar UMA dívida específica
   const executeIndividualSettlement = useCallback(async (settlement: Settlement): Promise<boolean> => {
@@ -230,7 +230,7 @@ export const useSettlements = (
       console.log(`💸 Pagando ${settlement.amount} TON para ${settlement.toName}`);
 
       // ✅ USAR A CARTEIRA CONECTADA EM VEZ DO BACKEND
-      const result = await executeDirectPayment(
+      const result = await smartPayment(
         settlement.toAddress!,
         settlement.amount,
         `${settlement.expenseDescription || 'Pagamento'} - SplitOn`
@@ -238,7 +238,7 @@ export const useSettlements = (
       
       if (!result.success && result.error?.includes('Timeout')) {
         console.log('🔄 Timeout no contrato, tentando pagamento direto...');
-        const directResult = await testDirectPayment(settlement.toAddress!, settlement.amount);
+        const directResult = await quickPayment(settlement.toAddress!, settlement.amount);
         if (directResult.success) {
           console.log('✅ Pagamento direto funcionou!');
           // Continue with marking as paid
@@ -277,7 +277,7 @@ export const useSettlements = (
     } finally {
       setIsPayingIndividual(null);
     }
-  }, [connected, executeDirectPayment, testDirectPayment, onError]);
+  }, [connected, smartPayment, quickPayment, onError]);
 
 
 
