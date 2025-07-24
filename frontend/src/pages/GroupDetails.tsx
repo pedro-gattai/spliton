@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  ArrowLeft, 
-  Users, 
-  DollarSign, 
-  Calendar, 
-  Copy, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Users,
+  DollarSign,
+  Calendar,
+  Copy,
+  CheckCircle,
   Clock,
   User,
   Wallet,
@@ -79,24 +79,19 @@ export const GroupDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useWalletConnection();
-  
+
   const [group, setGroup] = useState<GroupDetails | null>(null);
   const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedInviteCode, setCopiedInviteCode] = useState(false);
 
-  useEffect(() => {
-    if (groupId) {
-      loadGroupDetails();
-      loadGroupExpenses();
-    }
-  }, [groupId]);
 
-  const loadGroupDetails = async () => {
+  const loadGroupDetails = useCallback(async () => {
+    if (!groupId) return;
     try {
       setLoading(true);
-      const groupData = await apiService.getGroupById(groupId!);
+      const groupData = await apiService.getGroupById(groupId);
       setGroup(groupData);
     } catch (err) {
       console.error('Erro ao carregar detalhes do grupo:', err);
@@ -104,16 +99,24 @@ export const GroupDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId]);
 
-  const loadGroupExpenses = async () => {
+  const loadGroupExpenses = useCallback(async () => {
+    if (!groupId) return;
     try {
-      const expensesData = await apiService.getExpenses(groupId!);
+      const expensesData = await apiService.getExpenses(groupId);
       setExpenses(expensesData);
     } catch (err) {
       console.error('Erro ao carregar despesas do grupo:', err);
     }
-  };
+  }, [groupId]);
+
+  useEffect(() => {
+    if (groupId) {
+      loadGroupDetails();
+      loadGroupExpenses();
+    }
+  }, [groupId, loadGroupDetails, loadGroupExpenses]);
 
   const copyInviteCode = async () => {
     if (group?.inviteCode) {
@@ -154,7 +157,7 @@ export const GroupDetails = () => {
   const getSettlementStatus = (expense: GroupExpense) => {
     const totalParticipants = expense.participants.length;
     const settledParticipants = expense.participants.filter(p => p.isSettled).length;
-    
+
     if (settledParticipants === 0) return { status: 'pending', text: 'Pendente' };
     if (settledParticipants === totalParticipants) return { status: 'settled', text: 'Liquidado' };
     return { status: 'partial', text: 'Parcial' };
@@ -232,9 +235,9 @@ export const GroupDetails = () => {
                 <p className="font-medium">{formatDate(group.createdAt)}</p>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div>
               <p className="text-sm text-muted-foreground mb-2">Código de convite</p>
               <div className="flex items-center gap-2">
@@ -322,78 +325,80 @@ export const GroupDetails = () => {
         </Card>
 
         {/* Expenses */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Despesas ({expenses.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {expenses.length === 0 ? (
-              <div className="text-center py-8">
-                <DollarSign className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Nenhuma despesa ainda</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {expenses.map((expense) => {
-                  const settlementStatus = getSettlementStatus(expense);
-                  return (
-                    <div
-                      key={expense.id}
-                      className="border rounded-lg p-4 space-y-3"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold">
-                            {expense.description || 'Sem descrição'}
-                          </h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                                         <div className="flex items-center gap-1">
-                               <User className="w-3 h-3" />
-                               Pago por @{expense.payer.username || 'usuário'}
-                             </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {formatDate(expense.createdAt)}
+        <div className="pb-24"> {/* Adiciona padding inferior para evitar sobreposição com a navbar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Despesas ({expenses.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {expenses.length === 0 ? (
+                <div className="text-center py-8">
+                  <DollarSign className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Nenhuma despesa ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {expenses.map((expense) => {
+                    const settlementStatus = getSettlementStatus(expense);
+                    return (
+                      <div
+                        key={expense.id}
+                        className="border rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold">
+                              {expense.description || 'Sem descrição'}
+                            </h4>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                              <div className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                Pago por @{expense.payer.username || 'usuário'}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {formatDate(expense.createdAt)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-primary">
-                            {formatCurrency(expense.amount)}
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-primary">
+                              {formatCurrency(expense.amount)}
+                            </div>
+                            <Badge
+                              variant={
+                                settlementStatus.status === 'settled' ? 'secondary' :
+                                  settlementStatus.status === 'partial' ? 'outline' : 'destructive'
+                              }
+                              className="text-xs"
+                            >
+                              {settlementStatus.text}
+                            </Badge>
                           </div>
-                          <Badge 
-                            variant={
-                              settlementStatus.status === 'settled' ? 'secondary' :
-                              settlementStatus.status === 'partial' ? 'outline' : 'destructive'
-                            }
-                            className="text-xs"
-                          >
-                            {settlementStatus.text}
-                          </Badge>
                         </div>
-                      </div>
-                      
-                      {expense.category && (
+
+                        {expense.category && (
+                          <div className="text-xs text-muted-foreground">
+                            Categoria: {expense.category}
+                          </div>
+                        )}
+
                         <div className="text-xs text-muted-foreground">
-                          Categoria: {expense.category}
+                          {expense.participants.length} participantes
                         </div>
-                      )}
-                      
-                      <div className="text-xs text-muted-foreground">
-                        {expense.participants.length} participantes
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      
+
       <BottomNavigation />
     </div>
   );
