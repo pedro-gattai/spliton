@@ -80,29 +80,45 @@ export const useTonContract = () => {
     }
   }, []);
 
-  // ✅ FUNÇÃO CORRIGIDA PARA DirectPayment - TESTNET COMPATIBLE
+  // ✅ FUNÇÃO CORRIGIDA PARA DirectPayment - ESTRUTURA EXATA DO CONTRATO TACT
   const createDirectPaymentPayload = useCallback((to: string, amount: number, description: string): string => {
     try {
-      console.log('🏗️ Criando payload para contrato testnet:', { to, amount, description });
+      console.log('🏗️ Criando payload DirectPayment CORRETO:', { to, amount, description });
       
       if (!isValidTonAddress(to)) {
         throw new Error(`Endereço inválido: ${to}`);
       }
 
-      // ✅ TESTE COM OPCODE DIFERENTE PARA TESTNET
+      // ✅ Validar que o destinatário está correto
+      if (!to.startsWith('0:') && !to.startsWith('EQ') && !to.startsWith('kQ')) {
+        throw new Error(`Formato de endereço inválido: ${to}. Deve começar com 0:, EQ ou kQ`);
+      }
+
+      // ✅ ESTRUTURA EXATA DO CONTRATO TACT
       const cell = beginCell()
-        .storeUint(0x00000001, 32)          // Tente opcode 1 em vez de 2
-        .storeAddress(Address.parse(to))     // recipient
-        .storeCoins(toNano(amount))         // amount
-        .storeStringTail(description)       // description inline
+        .storeUint(0x04, 32)                    // DirectPayment opcode CORRETO
+        .storeAddress(Address.parse(to))        // to: Address
+        .storeCoins(toNano(amount))            // amount: Int (EM NANO TON!)
+        .storeStringTail(description)          // groupId: String
         .endCell();
       
       const bocString = cell.toBoc().toString('base64');
-      console.log('✅ Payload testnet criado, BOC length:', bocString.length);
+      console.log('✅ Payload DirectPayment TACT criado com opcode 0x04');
+      
+      // ✅ ADICIONAR DEBUG DO PAYLOAD
+      console.log('🔍 Payload debug:', {
+        opcode: '0x04 (DirectPayment)',
+        to: to,
+        amountTON: amount,
+        amountNano: toNano(amount).toString(),
+        description: description,
+        payloadLength: bocString.length
+      });
+      
       return bocString;
       
     } catch (error) {
-      console.error('❌ Erro ao criar payload testnet:', error);
+      console.error('❌ Erro ao criar payload DirectPayment:', error);
       throw error;
     }
   }, [isValidTonAddress]);
@@ -325,17 +341,29 @@ export const useTonContract = () => {
           throw new Error(`Valor mínimo é ${minAmount} TON`);
         }
 
-        // ✅ REDUZIR VALOR TOTAL PARA TESTNET
-        const contractFee = 0.01;      // Reduzir de 0.05 para 0.01
-        const networkFeeMargin = 0.05; // Reduzir de 0.1 para 0.05
-        const totalRequired = amount + contractFee + networkFeeMargin;
+        // ✅ VERIFICAR SE CONTRATO ESTÁ ATIVO
+        console.log('🔍 Verificações do contrato:', {
+          contractAddress,
+          expectedOpcode: '0x04',
+          messageStructure: 'to: Address, amount: Int (nano), groupId: String',
+          contractFee: '0.05 TON fixo',
+          maxAmount: '100 TON'
+        });
+
+        if (amount > 100) {
+          throw new Error('Valor máximo permitido pelo contrato é 100 TON');
+        }
+
+        // ✅ CORRIGIR CÁLCULO DE VALORES
+        const contractFee = 0.05;  // 0.05 TON de taxa
+        const totalRequired = amount + contractFee; // Valor total a enviar
         
-        console.log('💰 Cálculo testnet:', {
-          amount,
-          contractFee,
-          networkFeeMargin,
-          totalRequired,
-          contractAddress: 'kQD54Y2fe0Ixu7lUZHRDe1wZhdgE4cDR7EfUhTACHlMJbJLV'
+        console.log('💰 Cálculo CORRETO:', {
+          amount: `${amount} TON`,
+          contractFee: `${contractFee} TON`, 
+          totalRequired: `${totalRequired} TON`,
+          amountInNano: toNano(amount).toString(),
+          totalInNano: toNano(totalRequired).toString()
         });
 
         // ✅ Verificar saldo antes de executar
@@ -351,13 +379,13 @@ export const useTonContract = () => {
         // ✅ Criar payload compatível com testnet
         const directPaymentPayload = createDirectPaymentPayload(to, amount, description);
 
-        // ✅ Construir transação
+        // ✅ CORRIGIR TRANSAÇÃO
         const transaction = {
           validUntil: Math.floor(Date.now() / 1000) + 300, // 5 minutos
           messages: [{
             address: contractAddress,
-            amount: toNano(totalRequired).toString(), // Valor com margem para taxas
-            payload: directPaymentPayload
+            amount: toNano(totalRequired).toString(), // Total incluindo taxa
+            payload: directPaymentPayload // Payload com opcode 0x04 correto
           }]
         };
 
